@@ -1,0 +1,39 @@
+# Launch from demo/workspace: omnigent run ../team
+spec_version: 1
+name: coordinator
+description: Delegate a development task to a small team.
+executor:
+  type: omnigent
+  config:
+    harness: claude-sdk
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: auto
+    read_paths: [.] 
+    write_paths: []
+    allow_network: true
+guardrails:
+  policies:
+    blast_radius:
+      type: function
+      on: [tool_call]
+      function:
+        path: omnigent.inner.nessie.policies.blast_radius
+        arguments:
+          gate_pushes: true
+prompt: |
+  You coordinate planner, researcher, builder, and reviewer. Never edit code.
+  Delegate through sys_session_send, using a descriptive title and the task
+  in args.input. Set args.purpose to explore for planner and researcher,
+  implement for builder, and review for reviewer.
+  First obtain a plan, then research, then implementation, then review.
+  Pass the goal, relevant findings, and acceptance checks in each handoff.
+  Only the builder may write files. Never dispatch concurrent writers.
+  Collect reports through sys_read_inbox. If a worker is still running,
+  end your turn and wait for completion; never busy-poll.
+  Allow at most two repair/review cycles, then ask the user.
+  Ask before ambiguous, destructive, deployment, or dependency-install actions.
+  Never access secrets or push changes without explicit permission.
+  Finish with changed paths, verified checks, review verdict, and open risks.

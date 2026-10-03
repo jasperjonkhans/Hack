@@ -1,13 +1,15 @@
 """Real Lean tests: opt in with OMNIGENT_LEAN_VERSION=v4.24.0."""
 
+import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
 import pytest
 from lean_interact import LeanREPLConfig, LocalProject
 
-from omnigent.tools.lean import LeanProofTool
+from omnigent_lean.tools.lean import LeanProofTool
 
 pytestmark = pytest.mark.integration
 
@@ -48,6 +50,31 @@ def test_real_lean_verdict(config, code, name, verified):
     result = LeanProofTool(config).verify(code, name)
     assert result.verified is verified, result.to_dict()
     assert result.status == ("verified" if verified else "rejected"), result.to_dict()
+
+
+def test_real_native_skill_dispatch(config, monkeypatch, tmp_path):
+    from omnigent.spec import load
+    from omnigent.tools.base import ToolContext
+    from omnigent.tools.local import load_local_python_tools
+
+    # config prewarms the persistent REPL cache used by the native subprocess.
+    monkeypatch.delenv("OMNIGENT_LEAN_PROJECT", raising=False)
+    bundle = Path(__file__).resolve().parents[1] / "demo" / "lean"
+    spec = load(bundle)
+    wrapper = load_local_python_tools(
+        spec.local_tools, bundle, srt_available=False, uv_available=False
+    )[0]
+    example = json.loads(re.search(r"```json\n(.*?)\n```", spec.skills[0].content, re.S)[1])
+    context = ToolContext("lean-test", "lean-agent", workspace=tmp_path)
+    result = json.loads(wrapper.invoke(json.dumps(example), context))
+    assert result["verified"] is True, result
+    assert result["status"] == "verified"
+    assert result["theorem_name"] == "Arithmetic.add_zero"
+    assert result["axioms"] == []
+    example["code"] = example["code"].replace("by rfl", "by sorry")
+    result = json.loads(wrapper.invoke(json.dumps(example), context))
+    assert result["status"] == "rejected", result
+    assert result["verified"] is False
 
 
 def test_real_query_timeout(config):

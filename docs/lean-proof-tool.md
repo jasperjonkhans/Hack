@@ -10,7 +10,7 @@ The verification policy follows [lean-lsp-mcp's axiom verifier](https://github.c
 
 ## Install and provision
 
-Requirements: Python 3.10+, [uv](https://docs.astral.sh/uv/), Git, and [elan](https://github.com/leanprover/elan) with `lake` on `PATH`. Lean 4.24.0 is the tested toolchain. Other versions require a compatible LeanInteract REPL and have not been validated here.
+Requirements: Python 3.14+ (matching the repository's Omnigent demo), [uv](https://docs.astral.sh/uv/), Git, and [elan](https://github.com/leanprover/elan) with `lake` on `PATH`. Lean 4.24.0 is the tested toolchain. Other versions require a compatible LeanInteract REPL and have not been validated here.
 
 Install Python dependencies: `uv sync --locked --extra dev`.
 
@@ -22,9 +22,11 @@ Provision `LeanREPLConfig` once at host startup. It may download/build a version
 
 ## Register with Omnigent
 
-There is no existing orchestrator/tool registry in this repository yet. The module exposes a framework-neutral JSON schema and callable handler so any of Omnigent's agents can use the same verifier. No new agent framework or orchestration loop is introduced.
+The current repository uses the real Omnigent runtime. A native YAML agent bundle, skill, and plain function adapter are provided; see [Lean skill and integration](lean-skill.md). The bundle discovers its `@tool` wrapper in `tools/python/lean_verify_proof.py`, which calls `omnigent_lean.adapter.lean_verify_proof`. Its worker-owned environment selects the toolchain/project, cache, and deadline. It provisions on first use per Python process and reuses a persistent on-disk cache across native tool subprocesses; no Lean downloads/builds occur merely from parsing the bundle.
 
-Import `LeanProofTool` and `LEAN_PROOF_TOOL_SPEC` from `omnigent.tools`.
+The module also exposes a framework-neutral JSON schema and callable handler. No new agent framework or orchestration loop is introduced. The extension's separate `omnigent_lean` package avoids shadowing the installed `omnigent` runtime. This replaces the PR's initial `omnigent.tools` import path; the CLI/tool-call contracts are unchanged.
+
+Import `LeanProofTool` and `LEAN_PROOF_TOOL_SPEC` from `omnigent_lean.tools`.
 
 Create a host-owned configuration with `LeanREPLConfig(lean_version="v4.24.0", cache_dir=cache_path, enable_parallel_elaboration=False)` for the standard library. For a pre-built project instead, use `LeanREPLConfig(project=LocalProject(directory=project_path, auto_build=False), cache_dir=cache_path, enable_parallel_elaboration=False)`; import these configuration classes from `lean_interact`.
 
@@ -84,6 +86,6 @@ Fast tests (no Lean or network): `uv run pytest -m 'not integration'`.
 
 Real Lean tests: `OMNIGENT_LEAN_VERSION=v4.24.0 uv run pytest -m integration`. Optionally set `OMNIGENT_LEAN_CACHE` to reuse a pre-provisioned REPL cache. Without the version variable integration tests are explicitly skipped; with it missing tooling is a failure, not a skip.
 
-Lint and format: `uv run ruff check .` and `uv run ruff format --check .`.
+Lint and format the Lean extension/tests: `uv run --locked ruff check src tests` and `uv run --locked ruff format --check src tests`. Run the existing demo checks with `uv run --locked python -m unittest discover -s demo -v`.
 
-Integration tests cover valid/invalid proofs, placeholders, namespaces, standard/custom/native axioms, host project imports, imported `sorryAx` without compiler warnings, deadline exhaustion, and environment isolation. CI runs unit tests on Python 3.10 and 3.14 and real Lean tests on Python 3.12 with Lean 4.24.0. Mathlib-specific proofs are not included in the test suite.
+Integration tests cover valid/invalid proofs, placeholders, namespaces, standard/custom/native axioms, host project imports, imported `sorryAx` without compiler warnings, deadline exhaustion, and environment isolation. CI runs unit, native skill/tool compatibility, and existing demo tests on Python 3.14, and real Lean tests on Python 3.14 with Lean 4.24.0, matching the merged repository's Python requirement. Mathlib-specific proofs are not included in the test suite.

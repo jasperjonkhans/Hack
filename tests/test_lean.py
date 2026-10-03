@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 from lean_interact.interface import CommandResponse, DeclarationInfo, LeanError
 
-from omnigent.tools.lean import LEAN_PROOF_TOOL_SPEC, MAX_CODE_BYTES, LeanProofTool
+from omnigent_lean.tools.lean import LEAN_PROOF_TOOL_SPEC, MAX_CODE_BYTES, LeanProofTool
 
 
 def response(*, messages=(), declarations=(), sorries=()):
@@ -169,7 +169,7 @@ def test_startup_failure():
 
 def test_timeout_is_one_shared_budget(monkeypatch):
     clock = iter([100, 101, 115])
-    monkeypatch.setattr("omnigent.tools.lean.time.monotonic", lambda: next(clock))
+    monkeypatch.setattr("omnigent_lean.tools.lean.time.monotonic", lambda: next(clock))
     tool, server = tool_with(compiled(), report())
     assert tool.verify("theorem proof : True := by trivial", "proof").verified
     assert [call.kwargs["timeout"] for call in server.run.call_args_list] == [29, 15]
@@ -177,7 +177,7 @@ def test_timeout_is_one_shared_budget(monkeypatch):
 
 def test_exhausted_deadline_does_not_start_second_query(monkeypatch):
     clock = iter([100, 101, 131])
-    monkeypatch.setattr("omnigent.tools.lean.time.monotonic", lambda: next(clock))
+    monkeypatch.setattr("omnigent_lean.tools.lean.time.monotonic", lambda: next(clock))
     tool, server = tool_with(compiled(), report())
     assert tool.verify("theorem proof : True := by trivial", "proof").status == "timeout"
     assert server.run.call_count == 1

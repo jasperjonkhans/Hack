@@ -3,20 +3,25 @@ requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "omnigent-tools"
+name = "hack"
 version = "0.1.0"
-description = "Agent tools for Omnigent, including Lean 4 proof verification"
-requires-python = ">=3.10"
-dependencies = ["lean-interact==0.11.5"]
+description = "Omnigent development demo and Lean 4 proof verification"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "omnigent>=0.16.0",
+    "lean-interact==0.11.5",
+]
 
 [project.optional-dependencies]
+databricks = ["omnigent[databricks]>=0.16.0"]
 dev = ["pytest>=8,<10", "ruff>=0.12,<0.17"]
 
 [project.scripts]
-omnigent-lean = "omnigent.tools.lean:main"
+omnigent-lean = "omnigent_lean.tools.lean:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/omnigent"]
+packages = ["src/omnigent_lean"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from omnigent.tools import lean
+from omnigent_lean.tools import lean
 
 
 @pytest.mark.parametrize(

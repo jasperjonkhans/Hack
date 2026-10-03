@@ -4,12 +4,29 @@ Agent orchestration and tools for research, computation, and formal verification
 
 Development is tracked in the [issue tracker](https://github.com/jasperjonkhans/Hack/issues).
 
-## Tools
+## Development demo
 
-- [Lean proof verification](docs/lean-proof-tool.md): a Python/JSON tool backed by LeanInteract, with compiler diagnostics, timeouts, and strict axiom checks. Rejects incomplete proofs and non-standard trust assumptions.
+The uv project and virtual environment live here at the repository root.
+Agent YAML definitions live in `demo/team/`; details are in `demo/README.md`.
 
-Install: `uv sync --locked --extra dev` (Python 3.10+).
+Install: `uv sync`
 
-Fast tests: `uv run pytest -m 'not integration'`.
+Configure provider: `uv run omnigent setup`
 
-See the tool documentation for Lean provisioning, Omnigent registration, CLI usage, and the security/trust boundary.
+Run the YAML-defined team: `cd demo/workspace && ../../.venv/bin/omnigent run ../team`
+
+Run demo tests from the repository root: `uv run python -m unittest discover -s demo -v`
+
+After moving a virtual environment, restart stale Omnigent services from this
+root: `uv run omnigent stop`, then `uv run omnigent start --no-open`.
+
+## Lean tool and skill
+
+- [Lean proof verification](docs/lean-proof-tool.md): LeanInteract-backed tool with compiler diagnostics, deadlines, and strict transitive axiom checks.
+- [Lean skill and Omnigent integration](docs/lean-skill.md): proof development, statement review, and fail-closed verification, with a native agent bundle in `demo/lean/`.
+
+Install development dependencies: `uv sync --locked --extra dev` (Python 3.14+, matching the demo).
+
+Fast Lean/skill tests: `uv run --locked pytest -m 'not integration'`.
+
+The verifier lives in `omnigent_lean`, not `omnigent`: it coexists with the actual Omnigent runtime. The `omnigent-lean` CLI and `lean_verify_proof` tool name are unchanged. Lean execution requires a trusted, pre-provisioned environment and external worker isolation; neither the skill nor the tool is a sandbox.
