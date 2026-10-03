@@ -1,0 +1,12 @@
+[project]
+name = "hack"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "omnigent>=0.16.0",
+]
+
+[project.optional-dependencies]
+databricks = ["omnigent[databricks]>=0.16.0"]

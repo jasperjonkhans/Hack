@@ -1,0 +1,647 @@
+Adaptation in Nonlinear Learning Models
+for Nonstationary Tasks
+Wolfgang Konen and Patrick Koch
+Department of Computer Science, Cologne University of Applied Sciences,
+51643 Gummersbach, Germany
+wolfgang.konen@fh-koeln.de
+Abstract. The adaptation of individual learning rates is important for
+many learning tasks, particularly in the case of nonstationary learning en-
+vironments. Sutton has presented with the Incremental Delta Bar Delta
+algorithm a versatile method for many tasks. However, this algorithm
+was formulated only for linear models. A straightforward generalization
+to nonlinear models is possible, but we show in this work that it poses
+some obstacles, namely the stability of the learning algorithm. We pro-
+pose a new self-regulation of the model’s activation which ensures stabil-
+ity. Our algorithm shows better performance than other approaches on a
+nonstationary benchmark task. Furthermore we show how to derive this
+algorithm from basic loss functions.
+Keywords: Machine learning, IDBD, learning rates, adaptation.
+1 Introduction
+For many state-of-the-art learning algorithms the adaptation of learning rates
+(or other algorithm parameters) is important. This is particularly true if these
+algorithms shall behave well in nonstationary learning environments.
+In 1992 Sutton [10] suggested the Incremental Delta Bar Delta (IDBD) al-
+gorithm. IDBD deals with the learning rates for trainable parameters of any
+underlying learning algorithm. The key idea of IDBD is that these learning rates
+are not predeﬁned by the algorithm designer but they are themselves adapted
+as hyperparameters of the learning process. Sutton [10] expects such adaptable
+learning rates to be especially useful for nonstationary tasks or sequences of re-
+lated tasks and demonstrates good results on a small synthetic nonstationary
+learning problem with 20 weights.
+Sutton’s algorithm is proposed to work with a linear model. But as many learn-
+ing tasks exhibit nonlinear characteristics, e. g., well-known benchmark tasks for
+the control of physical objects like MountainCar or pole balancing, or real-world
+applications like the control of complex processes in plants. It is our goal to ex-
+tend Sutton’s IDBD to the nonlinear case. However, the nonlinear case poses some
+obstacles because the varying steepness in input-output relations can cause insta-
+bilities when IDBD is extended in a straightforward manner (by simply replacing
+T. Bartz-Beielstein et al. (Eds.): PPSN XIII 2014, LNCS 8672, pp. 292–301, 2014.
+c
+ Springer International Publishing Switzerland 2014
+Adaptation in Nonlinear Learning Models for Nonstationary Tasks 293
+the linear input-output relation with the nonlinear one). We demonstrate these
+obstacles and describe a way to overcome them by using a weight decay method.
+The paper is organized as follows: after brieﬂy reviewing some related work in
+the next paragraph, we present the IDBD method and our nonlinear generaliza-
+tion n-IDBD in Sec. 2. In Sec. 3 we apply n-IDBD to a nonlinear, nonstationary
+benchmark task. We show in Appendix A how the equations of n-IDBD can be
+derived from basic loss functions.
+1.1 Related Work
+Several online learning rate adaptation schemes have been proposed over the
+years: IDBD [10] from Sutton is an extension of Jacobs’ [4] earlier DBD (Delta
+Bar Delta) algorithm: it allows direct instead of batch updates. In [11] Sutton
+proposes the algorithms K1 and K2, two (linear) extensions to IDBD, and com-
+pares them with LMS and Kalman ﬁltering. Koop [5] uses the IDBD algorithm
+for online adaptation and investigates general aspects of temporal coherence.
+Almeida [1] discusses another method of step-size adaptation and applies it to
+the minimization of nonlinear functions. Schraudolph [8] extends on the K1 al-
+gorithm and showed that it is superior to the approach described by Almeida [1].
+Recently, Mahmood and Sutton [7] proposed with Autostep an extension to
+IDBD which has much less dependence on the meta-step-size parameter than
+IDBD. In the same year, Dabney and Barto [3] developed another adaptive step-
+size method for temporal diﬀerence learning, which is based on the estimation
+of upper and lower bounds. Again, both methods are proposed only for linear
+function approximation.
+Schraudolph [9] and, more recently, Li [6] extended IDBD to the nonlinear
+case: Schraudolph’s ELK1 performs an update with the instantaneous Hes-
+sian matrix of a suitable chosen loss function. The algorithm’s complexity is
+O(n2
+) where n is the number of parameters to learn. This algorithm is supe-
+rior to several others on the “four region” classiﬁcation benchmark. However,
+this benchmark consists of a piecewise constant target function. Thus it does
+not exhibit steep and nonlinear slopes in the input-output-relationships which
+can be a major diﬃculty for adaptive learning, as we will show in this paper. –
+Li’s KIMEL algorithm transforms the nonlinear input data with a kernel into a
+high-dimensional but linear feature space where linear IDBD is applied.
+2 Methods
+2.1 The Benchmark: A Nonlinear Nonstationary Task
+In this work we consider a nonstationary task as a testbed as in [10], but with
+an additional nonlinearity: n = 20 real-valued inputs x1, . . . , xn are indepen-
+dently drawn from the standard normal distribution. The concept to learn is the
+weighted sum of the ﬁrst 5 inputs, which is sent through a nonlinear function
+with slope σnst
+294 W.Konen and P. Koch
+y∗
+= tanh
+
+σnst
+5
+
+i=1
+sixi
+
+(1)
+where all the si are either +1 or −1. To make this task nonstationary, one of the
+ﬁve si is selected randomly and switched in sign every 20 examples. Thus, the
+model has to learn that only the ﬁrst ﬁve inputs are relevant and all other 15
+inputs are irrelevant. At the same time the weights of the relevant inputs have
+to be able to change quickly in order to follow the drifting target.
+2.2 Nonlinear Least Mean Squares (NLMS)
+As a baseline learning algorithm we use a Nonlinear Least-Mean-Square (NLMS)
+model with constant learning rate α and error signal δ(t) = y∗
+− y(t):
+y(t) = tanh (N(t)) with N(t) =
+n
+
+i=1
+wi(t)xi (2)
+wi(t + 1) = wi(t) + αδ(t)
+∂y
+∂wi
+= wi(t) + αδ(t)(1 − y2
+(t))xi (3)
+2.3 Incremental Delta Bar Delta (IDBD)
+Sutton’s IDBD algorithm [10] introduces for a linear unit y(t) = Σiwixi indi-
+vidual learning rates αi = eβi
+for every weight wi.
+Algorithm 1. IDBD in pseudo code
+1: Initialize: hi = 0, βi = βinit∀i and set θ, the meta-learning rate.
+2: for ( each new example (x1, . . . , xn, y∗
+)) do
+3: y = Σn
+i=1wixi
+4: δ = y∗
+− y
+5: for (every weight index i ) do
+6: Set βi ← βi + θxiδ hi
+7: Set αi ← eβi
+8: Set wi ← wi + αixiδ
+9: Set hi ← hi[1 − αix2
+i ]+
++ αixiδ with [d]+
+= d for d > 0, =0 else
+10: end for
+11: end for
+The main idea behind this algorithm is simple: The memory term hi is a de-
+caying trace of past weight changes. The increment in βi is proportional to the
+product of the current weight change xiδ and past weight changes hi. Accumu-
+lated increments correspond to the correlation between current and recent weight
+changes [10]. In case of positive correlation the learning rate can be larger, while
+negative correlation indicates overshooting weight increments where the learning
+rate should be reduced.
+Adaptation in Nonlinear Learning Models for Nonstationary Tasks 295
+2.4 Generalizing IDBD to Nonlinear Output Units
+A simple approach to generalize IDBD to the nonlinear case would be to sub-
+stitute the linear equation in Step 3 of the IDBD algorithm with the nonlinear
+Eq. (2). Then the diﬀerence is mainly the ’outer’ derivation of the nonlinearity
+with respect to the net input N(t) in Eq. (2). If we choose tanh() as nonlinearity,
+this derivative yields the term (1 − y2
+) in several places. The explicit derivation
+will be shown later in Appendix A.
+However, there is a severe problem with this simple approach: If the task
+exhibits a steep slope σnst in the nonlinear activation function, the adaptation
+of learning rates can quickly lead to a fully saturated system which does not learn
+the required concept. This is because large values of σnst lead to big error signals
+δ, and consequently to large learning rate changes and large weight changes.
+The output is driven into saturation sooner or later (near +1 or −1). With
+1 − y2
+≈ 0 the gradient information becomes unreliable. As a consequence,
+the mean squared error (MSE) will be big or even the whole system becomes
+unstable.
+2.5 Controlling the Activation
+To keep the average activation suﬃciently small, we add an accumulator with
+kacc(t + 1) = (1 − γ)kacc(t) + γ [y(t)]2
+and kacc(0) = 0, (4)
+where γ = 0.001 is a suﬃciently small constant. It is easy to show that the
+corresponding initial value problem has the solution
+kacc(t) =
+ t
+0
+y2
+(τ) γeγ(τ−t)
+dτ (5)
+For t  1/γ the function f(τ) = γeγ(τ−t)
+plays the role of a density function,
+since
+ t
+0 f(τ)dτ ≈ 1. Thus the accumulator kacc(t) is a memory trace of the
+square of recent activations. If for example the output is constant, y(t) = y0, then
+kacc(t) will show an exponential decay towards y2
+0. The smaller the parameter γ,
+the more long-term averaging the memory trace kacc(t) will be. The idea is now
+to add to the normal nonlinear weight update in Eq. (3) a new weight decay
+term proportional to kacc(t) with strength parameter ωk
+wi(t + 1) = wi(t) + αi(t)δ(t)(1 − y2
+(t))xi(t) − ωkkacc(t)wi(t)x2
+i (t) (6)
+The purpose of the weight decay term is as follows: If the average recent activa-
+tion is high in absolute value (i.e. the activations are close to saturation), then
+all weights will be decaying to move the output out of the saturated zone. If
+on the other hand the activation is close to zero, then nearly no weight decay
+will take place. The special setting ωk = 0 allows to recover the ’old’ situation
+without weight decay.
+We summarize our new n-IDBD method in Algorithm 2. The main diﬀerence
+to (linear) IDBD is the term Y = 1 − y2
+in several places and the weight decay
+296 W.Konen and P. Koch
+Algorithm 2. n-IDBD: nonlinear IDBD in pseudo code
+1: Initialize: hi = 0, βi = βinit ∀i, γ = 0.001, set the meta-learning rate θ, and set
+the weight decay parameter ωk.
+2: for ( each new example (x1, . . . , xn, y∗
+)) do
+3: Calculate y according to Eq. (2)
+4: Set δ = y∗
+− y, Y = 1 − y2
+and Z = Y + 2yδ
+5: Update accumulator kacc ← (1 − γ)kacc + γy2
+according to Eq. (4)
+6: for (every weight index i ) do
+7: Set βi ← βi + θY xihiδ
+8: Set αi ← eβi
+9: Set wi ← wi + αiY xiδ − ωkkaccwix2
+i
+10: Set hi ← hi[1 − (αiY Z + ωkkacc)x2
+i ]+
++ αiY xiδ
+11: end for
+12: end for
+term with ωkkacc in Steps 9 and 10 of the algorithm. It is a necessary prerequisite
+to achieve stable and fast learning. The precise form of the equations in Steps
+7, 9, and 10 is derived in Appendix A.
+Fig. 1. Dependence on the
+weight decay parameter
+ωK: n-IDBD has a broad
+minimum near ωK = 0.1.
+Shown is the asymptotic
+MSE at t = 400 000. For
+NLMS the x-axis shows
+instead of ωK the ten-fold
+learning rate 10α (i.e.
+we vary α ∈ [0, 0.05]).
+For ELK1 there is no
+parameter ωK .
+θ : 0.001 θ : 0.01
+●
+●
+●
+● ● ● ●
+●
+●
+●
+●
+● ● ● ●
+●
+●
+●
+●
+● ● ● ●
+●
+●
+●
+●
+● ● ● ●
+●
+●
+●
+●
+● ● ● ●
+●
+●
+●
+●
+● ● ● ●
+●
+0.0
+0.5
+1.0
+1.5
+2.0
+0.0 0.1 0.2 0.3 0.4 0.5 0.0 0.1 0.2 0.3 0.4 0.5
+ωk(10α)
+MSE
+method
+●
+ELK1
+NLMS
+n−IDBD
+σnst
+4
+2
+1
+3 Results
+3.1 Does Weight Decay Help?
+The ﬁrst experiment answers the question whether n-IDBD performs better than
+ordinary NLMS (or LMS) on the benchmark task and what inﬂuence the weight
+decay has. In Fig. 1 we vary the weight decay parameter ωk between 0 (no weight
+decay) and 0.5 (strong weight decay) and ﬁnd a broad minimum near ωk = 0.1.
+The mean squared error (MSE) is taken at t = 400 000 to get past any transient
+Adaptation in Nonlinear Learning Models for Nonstationary Tasks 297
+0 10000 20000 30000 40000
+0.1
+0.2
+0.3
+0.4
+time
+kacc
+αR
+αI
+Fig. 2.
+Development
+of relevant / ir-
+relevant learning
+rates (αR, αI ) and
+accumulator kacc.
+After 40 000 time
+steps n-IDBD
+adapts to the
+ratio αR/αI ≈ 9.
+phases. It is measured as the average of the squared error δ2
+between time steps
+300 000 and 400 000.
+Without weight decay the MSE rises sharply to values above 1.5. A closer
+inspection of the model shows that it is in this case fully saturated (kacc = 1)with
+arbitrary large weights and large learning rates. It does not learn anything, it
+only jumps erratically between +1 and −1. The learning rates surpass sensible
+bounds (e.g., αi > 100). A similar behavior is observed for ELK1 [8] which does
+not have any weight decay and exhibits in most cases large MSEs.
+With weight decay the situation changes completely for a broad range of ωk:
+n-IDBD has a low error everywhere, both weights and learning rates stabilize at
+roughly constant and sensible values. The overall activation of the unit stabilizes
+at a plateau kacc < 1.1
+The MSE of n-IDBD is consistently lower than that of
+NLMS. This holds for all possible learning rates α of NLMS.
+Fig. 2 shows the development of learning rates in one example of n-IDBD.
+Already after 10 000 time steps the algorithm diﬀerentiates well between relevant
+learning rates (αR = 1
+5 Σ5
+i=1αi) and irrelevant learning rates (αI = 1
+15 Σ20
+i=6αi).
+After approximately 22 000 time steps both the learning rates and the activation
+kacc stabilize at constant plateaus.
+Fig. 3 compares the situation with and without weight decay again, but with a
+focus on the longer time scale. The model with weight decay is consistently better
+(has a lower MSE) than the one without. Whenever MSE becomes larger than
+1.2, a closer inspection of the model shows that it is fully saturated (kacc = 1.0)
+and the weights are unrealistically large. Even for very gentle slopes σnst, where
+the model without weight decay does not saturate (not shown in the ﬁgure), we
+ﬁnd that weight decay is helpful to reduce the overall MSE.
+1
+The precise value of kacc ∈ [0.2, 0.7] depends on the other algorithm parameters.
+298 W.Konen and P. Koch
+Fig. 3. Comparison of
+MSE without weight de-
+cay (circles, ωK = 0) to
+MSE with weight decay
+(triangles, ωK = 0.1).
+Shown is the MSE aver-
+aged over the last 100 000
+time steps. The results
+with weight decay are al-
+ways better.
+THETA: 0.001 THETA: 0.01
+● ●
+●
+●
+●
+●
+● ●
+●
+●
+●
+●
+●
+● ● ●
+●
+● ● ●
+●
+● ● ●
+0.5
+1.0
+1.5
+1 2 3 4 1 2 3 4
+time/1e+05
+MSE
+σnst
+●
+●
+●
+2
+1
+0.5
+ωk
+● 0
+0.1
+Fig. 4. Average
+error as a function
+of αR, the learn-
+ing rate for the
+relevant inputs.
+Irrelevant inputs
+had their weights
+clamped to zero in
+NLMS. The singu-
+lar red point is the
+corresponding re-
+sult from n-IDBD
+with θ = 0.01. ●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+●
+● ● ● ● ● ● ● ●
+● ●
+● ●
+● ●
+● ●
+0.4
+0.6
+0.8
+0.0 0.2 0.4 0.6
+αR
+MSE
+method
+●
+●
+n−IDBD
+NLMS
+σnst
+●
+4
+2
+1
+3.2 Does Nonlinear IDBD Find the Optimal αi?
+We have seen in the ﬁrst experiment that n-IDBD automatically found large
+learning rates for the relevant weights and small learning rates for the irrelevant
+weights. Similar to [10] we want to test in a second experiment whether the
+learning rates found by n-IDBD are optimal. Therefore we build an ’ideal’ NLMS
+for the task, where the irrelevant weights are already clamped to zero and the
+relevant weights get a predeﬁned learning rate αR. The ’ideal’ NLMS has the
+same sigmoid and the same weight decay as n-IDBD. We get MSE-curves as
+shown in Fig. 4. The MSE is shown after 400 000 time steps, averaged between
+time steps 300 000 to 400 000. The red point for n-IDBD shows the average αR
+(relevant weights) and the corresponding MSE. It is right at the minimum of each
+Adaptation in Nonlinear Learning Models for Nonstationary Tasks 299
+Algorithm
+σnst LMS NLMS IDBD n-IDBD
+(linear) (nonlinear)
+1.0 0.54 0.61 0.34 0.25
+2.0 0.70 0.78 0.47 0.38
+4.0 0.79 0.87 0.56 0.47
+Table 1. Comparison of the best MSE for
+all algorithms tested on the nonstationary
+task with varying slopes σnst. ’Best’ means
+that each algorithm has its free parame-
+ters tuned to the best possible value. Pa-
+rameters are θ = 0.01, ωk = 0.1 for IDBD,
+α = 0.2 for LMS, and α = 0.1 for NLMS.
+ideal curve. This shows that there is no other setting of learning rate parameters
+which will perform better. (The MSE is slightly higher for n-IDBD than for
+NLMS, because n-IDBD has the irrelevant weights not clamped precisely to
+zero, they ﬂuctuate at a small level.)
+We ﬁnally compare in Tab. 1 the best MSE for all algorithms. It is remarkable
+that linear IDBD is better on the task than nonlinear NLMS. But n-IDBD is
+clearly better than all other tested algorithms for all sigmoidal slopes σnst.
+4 Conclusion
+We have extended the adaptive, linear IDBD to the nonlinear case. It was shown
+that a simple extension would lead to an instable nonlinear system due to satu-
+ration eﬀects. Similarly, the well-known ELK1 method showed diverging weights
+for most parameter settings as well. We proposed an additional self-regulative
+mechanism to control the average activation. This makes the adaptive system
+stable again. As in the linear case [10], the adaptive system ﬁnds the best pos-
+sible learning rate on the benchmark task. The n-IDBD algorithm exhibits a
+smaller MSE on the benchmark task than either LMS, NLMS or linear IDBD.
+In an upcoming paper [2] we will show that n-IDBD can be applied to a game-
+learning task (Connect-Four) with more than half a million of weights as well.
+A Appendix: Derivation of n-IDBD
+Similar to [10], the equations of n-IDBD can be derived from a few simple prin-
+ciples. We start with two loss functions
+L1(t) =
+1
+2
+δ2
+(t) and L2(t) =
+1
+2
+
+i
+w2
+i (t)x2
+i (t). (7)
+Both L1(t) and L2(t) should be minimized by the learning algorithm. The ﬁrst
+term rewards small errors and the second term regularizes the complexity of the
+network: Weights with active inputs (x2
+i > 0) should be as small as possible in
+their square sum.2
+In each learning step a weight change will be made in the
+steepest-descent direction for L1 and for L2:
+2
+It is also possible to use a simpler L2 = 1
+2
+Σiw2
+i (t) without the term x2
+i (t). Then
+every weight decays in each time step. This leads to the same qualitative results in
+the benchmark task of Sec. 2.1, but might lead to diﬀerent results in larger systems
+with sparse input activations.
+300 W.Konen and P. Koch
+wi(t + 1) = wi(t) − α
+∂L1(t)
+∂wi(t)
+− Ω
+∂L2(t)
+∂wi(t)
+= wi(t) − αδ(t)
+∂δ(t)
+∂wi(t)
+− Ωwi(t)x2
+i (t)
+= wi(t) + αδ(t)
+∂y(t)
+∂N(t)
+∂N(t)
+∂wi(t)
+− Ωwi(t)x2
+i (t)
+= wi(t) + αδ(t)(1 − y2
+(t))xi(t) − Ωwi(t)x2
+i (t) (8)
+with constants α and Ω. If we identify the constant α with the slowly varying
+learning rate αi and the constant Ω with ωkkacc(t) (which is justiﬁed, because
+kacc(t) approaches – after a transient phase – a roughly constant value), then
+Eq. (8) reproduces the weight update rule Eq. (6) for n-IDBD.
+The β-update rule is governed by the minimization of L1
+βi(t + 1) = βi(t) − θ
+∂L1(t)
+∂βi(t)
+= βi(t) − θδ(t)
+∂δ(t)
+∂βi(t)
+= βi(t) + θδ(t)
+∂y(t)
+∂N(t)
+∂N(t)
+∂wi(t)
+∂wi(t)
+∂βi(t)
+= βi(t) + θδ(t)(1 − y2
+(t))xi(t)hi(t) (9)
+where we have deﬁned hi(t) ≡ ∂wi(t)
+∂βi(t) as in [10]. We abbreviate Y (t) ≡ (1−y2
+(t))
+and derive the h-update rule:
+hi (t + 1) =
+∂
+∂βi
+wi(t + 1)
+=
+∂
+∂βi
+
+wi(t) + eβi
+δ(t)Y (t)xi(t) − Ωwi(t)x2
+i (t)
+
+= hi(t) + eβi
+δ(t)Y (t) + eβi
+∂δ(t)
+∂βi
+Y (t) + eβi
+δ(t)
+∂Y (t)
+∂βi
+xi(t) − Ωhi(t)x2
+i (t)
+= hi(t) + αi δ(t)Y (t) +
+∂δ(t)
+∂βi
+Y (t) + δ(t)
+∂Y (t)
+∂βi
+xi(t) − Ωhi(t)x2
+i (t) (10)
+The terms in square brackets come from the threefold product rule when taking
+the partial derivative of eβi
+δ(t)Y (t) with respect to βi. We know from Eq. (9)
+that
+∂δ(t)
+∂βi
+= −Y (t)xi(t)hi(t)
+Similarly we obtain
+∂Y (t)
+∂βi
+=
+∂(1 − y2
+(t))
+∂βi
+= −2y(t)
+∂y(t)
+∂βi
+= −2y(t)Y (t)xi(t)hi(t)
+Adaptation in Nonlinear Learning Models for Nonstationary Tasks 301
+If we put everything together and collect terms in Eq. (10), it is straightforward
+to derive
+hi(t + 1) = hi(t) 1 − (αiY (t)Z(t) + Ω) x2
+i (t) + αiδ(t)Y (t)xi(t) (11)
+with Z(t) = Y (t) + 2y(t)δ(t)
+which is, after adding a positive-bounding operation for the term in square brack-
+ets, the h-update rule of n-IDBD. Here the Ω-term ensures stability as well: Even
+close to saturation (when y2
+(t) ≈ 1, hence Y (t) ≈ 0) the Ω-term guarantees the
+decay of hi.
+References
+1. Almeida, L., Langlois, T., Amaral, J.D.: On-line step size adaptation. Technical
+Report RT07/97, INESC. 9 Rua Alves Redol, Lisboa, Portugal (1997)
+2. Bagheri, S., Thill, M., Koch, P., Konen, W.: Online adaptable learning rates for
+the game Connect-4. Submitted to IEEE Trans. on Computational Intelligence and
+AI in Games (2014)
+3. Dabney, W., Barto, A.G.: Adaptive step-size for online temporal diﬀerence learn-
+ing. In: 26th AAAI Conference on Artiﬁcial Intelligence (2012)
+4. Jacobs, R.A.: Increased rates of convergence through learning rate adaptation.
+Neural Networks 1(4), 295–307 (1988)
+5. Koop, A.: Investigating experience: Temporal coherence and empirical knowledge
+representation. Master’s thesis, University of Alberta, Canada (2008)
+6. Li, C., Ye, Y., Miao, Q., Shen, H.-L.: Kimel: A kernel incremental metalearning
+algorithm. Signal Processing 93(6), 1586–1596 (2013); Special issue on Machine
+Learning in Intelligent Image Processing
+7. Mahmood, A.R., Sutton, R.S., Degris, T., Pilarski, P.M.: Tuning-free step-size
+adaptation. In: IEEE International Conference on Acoustics, Speech and Signal
+Processing (ICASSP), pp. 2121–2124. IEEE (2012)
+8. Schraudolph, N.N.: Online local gain adaptation for multi-layer perceptrons. Tech-
+nical Report IDSIA-09-98, Istituto Dalle Molle Di Studi Sull Intelligenza Artiﬁciale
+(IDSIA), Switzerland (1998)
+9. Schraudolph, N.N.: Online learning with adaptive local step sizes. In: Neural Nets
+WIRN Vietri 1999, pp. 151–156. Springer (1999)
+10. Sutton, R.S.: Adapting bias by gradient descent: An incremental version of delta-
+bar-delta. In: Swartout, W.R. (ed.) 10th AAAI Conference on Artiﬁcial Intelli-
+gence, pp. 171–176 (1992)
+11. Sutton, R.S.: Gain adaptation beats least squares. In: 7th Yale Workshop on Adap-
+tive and Learning Systems, pp. 161–166 (1992)
+
