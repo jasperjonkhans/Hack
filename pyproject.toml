@@ -5,8 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "academic-db-mcp",
     "omnigent>=0.16.0",
 ]
 
 [project.optional-dependencies]
 databricks = ["omnigent[databricks]>=0.16.0"]
+
+[tool.uv.workspace]
+members = ["tools/academic_db"]
+
+[tool.uv.sources]
+academic-db-mcp = { workspace = true }
