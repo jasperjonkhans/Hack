@@ -1,0 +1,24 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-oracle
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, oracle]
+    steps:
+      - name: Deploy ${{ github.sha }}
+        run: /opt/hack/deploy/oracle/deploy.sh
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
