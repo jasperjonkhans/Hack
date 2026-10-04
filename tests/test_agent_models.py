@@ -5,7 +5,15 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-AGENTS = ["lab", "lab/agents/scout", "lab/agents/verifier", "team", "team/agents/worker"]
+AGENTS = [
+    "lab",
+    "lab/agents/scout",
+    "lab/agents/verifier",
+    "lab/agents/hypothesizer",
+    "lab/agents/worker",
+    "team",
+    "team/agents/worker",
+]
 
 
 def test_agents_pin_one_openrouter_model():
