@@ -10,6 +10,8 @@ Pi-backed Omnigent agents with a small Python controller for #12.
 
 **Research roles:** the Scout and Verifier live with their literature tools in `../lab/agents/scout` and `../lab/agents/verifier`; `runtime.py` loads them from there. They use the academic works database (`tools/academic_db`): Scouts save papers and record claims, Verifiers record confidence-scored verdicts. Both answer the controller with the `run_task` JSON contract, and pass claims as `claim:<id>` in `output_refs`. The loop pauses before dispatch if any role's config is missing, without consuming a round.
 
+For quick research questions in the shared web UI, pick the `research-team` agent (`lab/config.yaml`): its Lead calls the same Scout and Verifier as sub-agents, without experiments or the approval gate.
+
 ## Loop
 
 Research: lead scope/todos → at most five parallel scouts → one verifier per completed scout report assesses its `claim:<id>` refs in the academic database → lead reviews all reports. Stop early or after three total rounds; report gaps and propose question, hypothesis and plan.

@@ -6,8 +6,26 @@ REPO_URL=${REPO_URL:-https://github.com/jasperjonkhans/Hack.git}
 REPO_DIR=${REPO_DIR:-/opt/hack}
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get update -q
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq docker.io docker-compose-v2 git curl openssl
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq docker.io docker-compose-v2 git curl openssl bubblewrap
 sudo usermod -aG docker "$USER"
+
+# Agent sandboxes (os_env.sandbox: auto) use bubblewrap. Ubuntu 24.04 blocks
+# unprivileged user namespaces (kernel.apparmor_restrict_unprivileged_userns),
+# so allow them for /usr/bin/bwrap only; without this every sandboxed tool call
+# fails with "setting up uid map: Permission denied".
+if [[ ! -f /etc/apparmor.d/bwrap ]]; then
+  sudo tee /etc/apparmor.d/bwrap >/dev/null <<'PROFILE'
+abi <abi/4.0>,
+include <tunables/global>
+
+profile bwrap /usr/bin/bwrap flags=(unconfined) {
+  userns,
+
+  include if exists <local/bwrap>
+}
+PROFILE
+  sudo apparmor_parser -r /etc/apparmor.d/bwrap
+fi
 
 if ! command -v uv >/dev/null; then
   tarball="uv-$(uname -m)-unknown-linux-gnu.tar.gz"

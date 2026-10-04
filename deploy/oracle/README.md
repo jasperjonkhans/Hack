@@ -9,8 +9,8 @@ The shared Omnigent server runs on the Oracle Always Free VM `hack-nation-pg`
 | Web UI + API | `https://130-61-237-227.sslip.io` | Caddy terminates TLS (Let's Encrypt) |
 | Omnigent server | Docker, `ghcr.io/omnigent-ai/omnigent-server:v<uv.lock version>` | Also on `127.0.0.1:8000` for SSH tunnels |
 | Omnigent database | Docker `postgres:16`, not exposed | Separate from the `academic` database |
-| Team agents | `demo/team`, seeded as the built-in agent `hack-team` | Reloaded on every deploy |
-| Agent host | systemd `omnigent-host`, runs from `/opt/hack/.venv` | Executes agents and tools on the VM |
+| Team agents | `lab/` as `research-team` (Lead + Scout/Verifier sub-agents) and `demo/team` as `hack-team` (coding demo) | Reloaded on every deploy |
+| Agent host | systemd `omnigent-host`, runs from `/opt/hack/.venv` | Executes agents and tools on the VM; sandboxes need `bubblewrap` (installed by `bootstrap-vm.sh`) |
 | Deploys | GitHub Actions self-hosted runner on the VM (label `oracle`) | `.github/workflows/deploy.yml` |
 
 The Omnigent version comes from `uv.lock`, so bumping `omnigent` in a PR
