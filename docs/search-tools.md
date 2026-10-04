@@ -23,10 +23,14 @@ themselves.
 | Agent | Tools |
 |---|---|
 | Scout | `openalex_search`, `openalex_get_paper`, `arxiv_search`, `arxiv_get_paper`, `europepmc_search`, `europepmc_get_paper`, `crossref_search`, `zbmath_search`, `zbmath_get_paper`, `loogle_search` |
-| Verifier | `crossref_get_paper`, `openalex_get_paper`, `arxiv_get_paper`, `europepmc_get_paper`, `zbmath_get_paper`, `unpaywall_find_full_text`, `loogle_search` |
+| Verifier | `crossref_get_paper`, `openalex_get_paper`, `arxiv_get_paper`, `europepmc_get_paper`, `zbmath_get_paper`, `unpaywall_find_full_text`, `loogle_search`, `check_quote`, `read_full_text` |
 
 Do not set `sandbox.container_image` for these agents: Omnigent runs container
 tools with networking disabled, which breaks every provider.
+
+`pypdf` is a project dependency, so run Omnigent from the project environment
+(`uv run omnigent …` or `.venv/bin/omnigent`). Elsewhere the PDF step is
+skipped and `attempts` reports `pypdf_not_installed`.
 
 ## Searching and continuing
 
@@ -83,6 +87,37 @@ published DOI. Unknown citation counts remain null rather than becoming zero.
 Records carry `identifiers` (DOI, PMID, PMCID, versionless arXiv ID, provider
 ID) so the academic database can merge the same work found by several providers.
 A merged work is one piece of evidence, not several.
+
+## Checking quotes against full text
+
+`check_quote(paper_id, quote)` checks that a quote (for example a claim's
+`source_quote`) really appears in the paper. It takes a DOI, arXiv ID, PMCID,
+PMID or OpenAlex ID and reads, in order:
+
+1. Europe PMC full-text XML (open-access PMC papers), with sections.
+2. arXiv HTML, with sections.
+3. An open-access PDF: arXiv, then OpenAlex and Unpaywall links (Unpaywall
+   needs `CONTACT_EMAIL`), at most three tries. Text comes from `pypdf`, so
+   locations are page numbers, columns may interleave and scanned PDFs without
+   a text layer fail. Links that return a web page instead are skipped.
+4. The abstract alone.
+
+`attempts` records why earlier sources were skipped. Matching is deterministic
+and ignores case, punctuation, citation markers, footnotes and words split by
+PDF extraction ("sup ergravity"); reference lists are excluded.
+
+It returns `verdict` (`exact`, `near_exact` ≥ 0.9, `partial` ≥ 0.6, `not_found`),
+`match_score`, `location` (section path and paragraph), `matched_text`,
+surrounding `context` and `differences`, the changed words. One altered number
+can still score `near_exact`, so always read `differences`. If
+`checked_against` is `abstract`, `not_found` only means the quote is not in the
+abstract. A match shows the words are in the paper, not that they support the
+claim; the Verifier judges that and records it with `assess_claim`.
+
+`read_full_text(paper_id)` returns the section outline; pass `section` (and
+`next_offset` as `offset`) to read a section in 8,000-character pages. Parsed
+texts are cached under `SEARCH_STATE_DIR/fulltext`, so repeated checks on one
+paper fetch it once.
 
 ## Failures and request limits
 
@@ -145,8 +180,9 @@ access lookup and Loogle declaration search.
 Validate all offline search tests and the additional providers' live behaviour:
 
 ```sh
-python -m unittest discover -s scripts -p 'test*search_tools.py' -v
+python -m unittest discover -s scripts -p 'test*.py' -v
 python scripts/smoke_additional_search_tools.py
+python scripts/smoke_full_text.py
 ```
 
 The live script requires network access and `CONTACT_EMAIL`; it never prints

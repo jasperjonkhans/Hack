@@ -153,7 +153,7 @@ class SearchTests(unittest.TestCase):
                       'zbmath_search', 'zbmath_get_paper', 'loogle_search'},
             'verifier': {'crossref_get_paper', 'openalex_get_paper', 'arxiv_get_paper',
                          'europepmc_get_paper', 'zbmath_get_paper', 'unpaywall_find_full_text',
-                         'loogle_search'},
+                         'loogle_search', 'check_quote', 'read_full_text'},
         }
         for agent, names in expected.items():
             found = set()
