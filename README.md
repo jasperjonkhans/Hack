@@ -5,7 +5,7 @@ Agent orchestration and tools for research, computation, and formal verification
 Development is tracked in the [issue tracker](https://github.com/jasperjonkhans/Hack/issues).
 
 ## Tools
-
+ 
 - [`tools/academic_db`](tools/academic_db/README.md): MCP server giving agents read/write access to the shared academic works database (papers from OpenAlex, Semantic Scholar and arXiv, plus claims and confidence-scored verdicts). Copy `.env.example` to `.env` and fill in the connection strings.
 
 ## Development demo
