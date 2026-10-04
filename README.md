@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/mimir-logo-white.webp">
+    <img src="docs/assets/mimir-logo-black.webp" alt="Mimir logo" width="200">
+  </picture>
+</p>
+
 # Mimir
 
 **From questions to experiments.**
@@ -124,6 +131,8 @@ Every agent is pinned to one model through OpenRouter, and tests keep the agents
 Optional formal-proof support is available to the local experiment worker in `team/agents/worker/`. See [Lean proof verification](docs/lean-proof-tool.md) and [Lean skill and Omnigent integration](docs/lean-skill.md). Lean execution needs a trusted, pre-provisioned environment and external worker isolation; neither the skill nor the tool is a sandbox.
 
 ## Presentation
+
+The link and credentials to test the demo are at the end of the presentation.
 
 https://drive.google.com/file/d/11Fsainof6ZpvWurH-3jQLUpqJAtQwL3a/view?usp=sharing
 
