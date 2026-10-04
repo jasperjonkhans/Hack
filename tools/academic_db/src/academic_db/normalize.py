@@ -11,6 +11,8 @@ from .identifiers import (
     arxiv_id_from_doi,
     normalize_arxiv_id,
     normalize_doi,
+    normalize_pmcid,
+    normalize_pmid,
     strip_openalex,
 )
 
@@ -61,6 +63,8 @@ class Record:
     oa_status: str | None = None
     oa_url: str | None = None
     abstract: str | None = None
+    pmid: str | None = None  # used to match lookups; kept in raw, not as a column
+    pmcid: str | None = None
     authors: tuple[Author, ...] = field(default_factory=tuple)
 
 
@@ -137,6 +141,8 @@ def from_openalex(work: dict[str, Any]) -> Record:
         oa_status=_oa_status(open_access.get("oa_status")),
         oa_url=_text(open_access.get("oa_url")),
         abstract=_openalex_abstract(work.get("abstract_inverted_index")),
+        pmid=normalize_pmid((work.get("ids") or {}).get("pmid")),
+        pmcid=normalize_pmcid((work.get("ids") or {}).get("pmcid")),
         authors=authors,
     )
 
@@ -178,6 +184,8 @@ def from_semantic_scholar(paper: dict[str, Any]) -> Record:
         oa_status=_oa_status(pdf.get("status")),
         oa_url=_text(pdf.get("url")),
         abstract=_text(paper.get("abstract")),
+        pmid=normalize_pmid(external.get("PubMed")),
+        pmcid=normalize_pmcid(external.get("PubMedCentral")),
         authors=authors,
     )
 

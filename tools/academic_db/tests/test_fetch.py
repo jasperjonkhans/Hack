@@ -15,7 +15,7 @@ S2_ID = S2["paperId"]
 
 
 def fake_client(calls, *, s2_rate_limited=False):
-    def openalex_works(openalex_ids=(), dois=(), arxiv_ids=()):
+    def openalex_works(openalex_ids=(), dois=(), arxiv_ids=(), pmids=()):
         calls.append(("openalex", tuple(openalex_ids), tuple(dois), tuple(arxiv_ids)))
         return [OPENALEX] if "W2626778328" in openalex_ids or "1706.03762" in arxiv_ids else []
 
@@ -95,7 +95,7 @@ def test_corrupted_provider_record_is_rejected_and_the_right_one_found_later():
     calls = []
 
     client = SimpleNamespace(
-        openalex_works=lambda openalex_ids=(), dois=(), arxiv_ids=(): (
+        openalex_works=lambda openalex_ids=(), dois=(), arxiv_ids=(), pmids=(): (
             calls.append(("openalex", tuple(dois), tuple(arxiv_ids)))
             or ([corrupted] if "1810.04805" in arxiv_ids else [])
             + ([correct] if "10.18653/v1/n19-1423" in dois else [])
@@ -122,3 +122,25 @@ def test_mismatch_is_reported_with_the_other_title():
     (paper,) = fetch_many([Identifier("arxiv", "1706.03762")], client=client)
     assert paper.status["openalex"] == "mismatch" and "protein folding" in paper.detail["openalex"]
     assert "openalex" not in paper.records
+
+
+def test_pmid_and_pmcid_lookups():
+    nature = load_json("openalex_nature14539.json")  # ids.pmid = https://pubmed.ncbi.nlm.nih.gov/26017442
+    s2_nature = S2 | {"paperId": "a" * 40, "title": nature["title"],
+                      "externalIds": {"PubMed": "26017442", "PubMedCentral": "7778961"}}
+    calls = []
+    client = SimpleNamespace(
+        openalex_works=lambda openalex_ids=(), dois=(), arxiv_ids=(), pmids=(): (
+            calls.append(("openalex", tuple(pmids))) or ([nature] if "26017442" in pmids else [])),
+        semantic_scholar_papers=lambda keys: (
+            calls.append(("semantic_scholar", tuple(keys)))
+            or [s2_nature if k in ("PMID:26017442", "PMCID:7778961") else None for k in keys]),
+        arxiv_feeds=lambda ids: [],
+    )
+    (by_pmid,) = fetch_many([Identifier("pmid", "26017442")], client=client)
+    assert by_pmid.status == {"openalex": "found", "semantic_scholar": "found", "arxiv": "skipped"}
+
+    calls.clear()
+    (by_pmcid,) = fetch_many([Identifier("pmcid", "PMC7778961")], client=client)
+    assert ("semantic_scholar", ("PMCID:7778961",)) in calls  # bare digits for Semantic Scholar
+    assert by_pmcid.status["openalex"] == "found"  # via the PMID Semantic Scholar revealed

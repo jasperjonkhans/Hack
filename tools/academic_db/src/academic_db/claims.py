@@ -81,11 +81,17 @@ def assess_claim(conn: psycopg.Connection, *, claim_id: int, confidence: float, 
         stance = item.get("stance")
         if stance not in STANCES:
             raise ValueError(f"evidence stance must be one of {', '.join(STANCES)}")
-        items.append((int(item["work_id"]), stance, (item.get("note") or "").strip() or None))
-    work_ids = [work_id for work_id, _, _ in items]
+        score = item.get("match_score")
+        if score is not None and not 0 <= score <= 1:
+            raise ValueError("evidence match_score must be between 0 and 1")
+        items.append({
+            "work_id": int(item["work_id"]), "stance": stance, "match_score": score,
+            **{key: (item.get(key) or "").strip() or None for key in ("note", "quote", "location")},
+        })
+    work_ids = [item["work_id"] for item in items]
     if len(set(work_ids)) != len(work_ids):
         raise ValueError("each work may appear only once in evidence")
-    stances = {stance for _, stance, _ in items}
+    stances = {item["stance"] for item in items}
     if verdict == "supported" and "supports" not in stances:
         raise ValueError("a 'supported' verdict needs at least one evidence item with stance 'supports'")
     if verdict == "contradicted" and "contradicts" not in stances:
@@ -106,8 +112,10 @@ def assess_claim(conn: psycopg.Connection, *, claim_id: int, confidence: float, 
         if items:
             with conn.cursor() as cur:
                 cur.executemany(
-                    "INSERT INTO claim_evidence (assessment_id, work_id, stance, note) VALUES (%s, %s, %s, %s)",
-                    [(assessment_id, work_id, stance, note) for work_id, stance, note in items],
+                    "INSERT INTO claim_evidence (assessment_id, work_id, stance, note, quote, location, match_score) "
+                    "VALUES (%(assessment_id)s, %(work_id)s, %(stance)s, %(note)s, %(quote)s, %(location)s, "
+                    "%(match_score)s)",
+                    [item | {"assessment_id": assessment_id} for item in items],
                 )
     return {"assessment_id": assessment_id, "claim_id": claim_id, "verdict": verdict, "confidence": confidence}
 
@@ -126,7 +134,9 @@ def get_claim(conn: psycopg.Connection, claim_id: int) -> dict[str, Any] | None:
                coalesce((SELECT json_agg(json_build_object('work_id', e.work_id, 'title', w.title,
                                                            'publication_year', w.publication_year,
                                                            'doi', w.doi, 'arxiv_id', w.arxiv_id,
-                                                           'stance', e.stance, 'note', e.note)
+                                                           'stance', e.stance, 'note', e.note,
+                                                           'quote', e.quote, 'location', e.location,
+                                                           'match_score', e.match_score)
                                          ORDER BY e.stance DESC, e.work_id)
                          FROM claim_evidence e JOIN works w ON w.id = e.work_id
                          WHERE e.assessment_id = a.id), '[]'::json) AS evidence

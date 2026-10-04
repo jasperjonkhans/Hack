@@ -129,7 +129,10 @@ Every `works` column, plus `primary_provider`, `source_id`, `cited_by_count`, `i
 | `assessment_id` | bigint → `claim_assessments.id` | |
 | `work_id` | bigint → `works.id` | The cited paper. A work with evidence can't be deleted; `merge_works` moves its evidence |
 | `stance` | text | `supports` or `contradicts` |
-| `note` | text | Where or how, e.g. "Table 2: BLEU 28.4" |
+| `note` | text | How it supports or contradicts the claim, in the Verifier's words |
+| `quote` | text | Exact passage from the paper |
+| `location` | text | Where the passage is, e.g. a section, page or `check_quote` location |
+| `match_score` | numeric(4,3) | How closely the quote matches the paper's full text, 0–1. NULL = not checked |
 
 ### `claim_status` (view)
 
@@ -144,7 +147,7 @@ What code can establish about a paper without reading it, so Verifiers don't spe
 | Function | Use |
 |---|---|
 | `refresh_work(work_id)` | Recompute a work's canonical columns from its records. Call it after any insert, update or move of `work_records`. Raises if the work has no records |
-| `merge_works(target_id, source_ids bigint[])` | Move all records, claim evidence and claim sources of the source works into the target, delete the sources, then refresh the target |
+| `merge_works(target_id, source_ids bigint[])` | Move all records, claim evidence (including quote checks) and claim sources of the source works into the target, delete the sources, then refresh the target |
 
 ## Identifier formats
 
@@ -156,7 +159,9 @@ Normalize user input to these forms before querying. For example, `https://doi.o
 | arXiv ID | `YYMM.NNNNN` or `archive/NNNNNNN`, no version | `1706.03762` | `works.arxiv_id`, `work_records.arxiv_id` |
 | MAG ID | integer | `2626778328` | `works.mag_id`, `work_records.mag_id` |
 | OpenAlex work | `W` + digits | `W2626778328` | `work_records.provider_work_id` where `provider='openalex'` |
-| Semantic Scholar paper | 40 hex chars | `204e3073870fae3d05bcbc2f6a8e263d9b72e776` | `work_records.provider_work_id` where `provider='semantic_scholar'` |
+| Semantic Scholar paper | 40 hex chars, or `CorpusId:N` | `204e3073870fae3d05bcbc2f6a8e263d9b72e776` | `work_records.provider_work_id` where `provider='semantic_scholar'` |
+| PMID | digits (`PMID:` prefix or PubMed URL in input) | `26017442` | `raw` of OpenAlex (`ids.pmid`) and Semantic Scholar (`externalIds.PubMed`) records |
+| PMCID | `PMC` + digits | `PMC7778961` | `raw` of Semantic Scholar records (`externalIds.PubMedCentral`); OpenAlex doesn't expose PMCIDs |
 | arXiv record | same as arXiv ID | `1706.03762` | `work_records.provider_work_id` where `provider='arxiv'` |
 | OpenAlex author | `A` + digits | `A5001226970` | `work_authors.author_id` |
 | Semantic Scholar author | digits | `40348417` | `work_authors.author_id` |

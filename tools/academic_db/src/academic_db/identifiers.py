@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
-IdKind = Literal["doi", "arxiv", "openalex", "semantic_scholar"]
+IdKind = Literal["doi", "arxiv", "openalex", "semantic_scholar", "pmid", "pmcid"]
 
 _DOI_PREFIX = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)", re.IGNORECASE)
 _ARXIV_URL = re.compile(r"^(?:https?://)?(?:www\.|export\.)?arxiv\.org/(?:abs|pdf)/", re.IGNORECASE)
@@ -17,6 +17,13 @@ _ARXIV_DOI = re.compile(r"^10\.48550/arxiv\.(.+)$", re.IGNORECASE)
 _OPENALEX_WORK = re.compile(r"^(?:https?://openalex\.org/)?(W\d+)$", re.IGNORECASE)
 _S2_PAPER = re.compile(r"(?:^|/)([0-9a-f]{40})$", re.IGNORECASE)
 _S2_CORPUS = re.compile(r"^corpus_?id:\s*(\d+)$", re.IGNORECASE)
+_PMID = re.compile(r"^(?:pmid:?\s*|https?://pubmed\.ncbi\.nlm\.nih\.gov/)(\d+)/?$", re.IGNORECASE)
+_PMCID = re.compile(
+    r"^(?:pmcid:?\s*|https?://(?:www\.ncbi\.nlm\.nih\.gov/pmc|pmc\.ncbi\.nlm\.nih\.gov)/articles/)?(?:pmc)(\d+)/?$"
+    r"|^pmcid:?\s*(\d+)$",
+    re.IGNORECASE,
+)
+_ZBMATH = re.compile(r"^(?:zbmath|zbl)\b", re.IGNORECASE)
 
 
 def normalize_doi(value: str | None) -> str | None:
@@ -43,6 +50,18 @@ def arxiv_id_from_doi(doi: str | None) -> str | None:
     """'10.48550/arxiv.1706.03762' -> '1706.03762'."""
     match = _ARXIV_DOI.match(doi or "")
     return normalize_arxiv_id(match.group(1)) if match else None
+
+
+def normalize_pmid(value: str | None) -> str | None:
+    """'https://pubmed.ncbi.nlm.nih.gov/26017442' or '26017442' -> '26017442'."""
+    match = re.search(r"(\d+)/?$", str(value or ""))
+    return match.group(1) if match else None
+
+
+def normalize_pmcid(value: str | None) -> str | None:
+    """'PMC7778961', '7778961' or a PMC URL -> 'PMC7778961'."""
+    match = re.search(r"(\d+)/?$", str(value or ""))
+    return f"PMC{match.group(1)}" if match else None
 
 
 def strip_openalex(value: str | None) -> str | None:
@@ -74,8 +93,14 @@ def parse_identifier(text: str) -> Identifier:
         return Identifier("semantic_scholar", match.group(1).lower())
     if match := _S2_CORPUS.match(value):
         return Identifier("semantic_scholar", f"CorpusId:{match.group(1)}")
+    if match := _PMID.match(value):
+        return Identifier("pmid", match.group(1))
+    if match := _PMCID.match(value):
+        return Identifier("pmcid", f"PMC{match.group(1) or match.group(2)}")
+    if _ZBMATH.match(value):
+        raise ValueError(f"zbMATH IDs are not supported yet ({text!r}); pass the paper's DOI instead.")
     raise ValueError(
         f"Unrecognized identifier {text!r}. Use a DOI (10.1038/nature14539), arXiv ID (1706.03762), "
         "OpenAlex work ID (W2626778328), Semantic Scholar paper ID (40 hex characters) or CorpusId:N, "
-        "or a URL to one."
+        "PMID:26017442, PMC7778961, or a URL to one."
     )
