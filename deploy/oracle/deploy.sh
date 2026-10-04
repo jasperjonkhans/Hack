@@ -15,6 +15,10 @@ main() {
   fi
 
   uv sync --locked --quiet
+  # Agents start academic-db-mcp from their session folder, which is often
+  # outside this project; a tool install puts it on PATH (~/.local/bin). The
+  # editable install still reads this repository's .env.
+  uv tool install --quiet --force --editable tools/academic_db
 
   local version
   version=$(awk '$0 == "name = \"omnigent\"" { getline; gsub(/version = |"/, ""); print; exit }' uv.lock)
@@ -32,7 +36,7 @@ main() {
 
   docker compose pull --quiet
   docker compose up -d --remove-orphans
-  # Built-in agents are seeded only at startup, so pick up lab/ (Mimir) changes.
+  # Built-in agents are seeded only at startup, so pick up agent config changes (lab/ is Mimir).
   docker compose restart omnigent
 
   if systemctl is-enabled --quiet omnigent-host 2>/dev/null; then
