@@ -76,7 +76,8 @@ def arxiv_search(query: str, limit: int = 10,
                  sort: Literal["relevance", "recent"] = "relevance",
                  query_mode: Literal["plain", "advanced"] = "plain",
                  search_scope: Literal["all", "title_abstract", "title"] = "all",
-                 from_year: int | None = None, cursor: str | None = None) -> dict:
+                 from_year: int | None = None, detail: Literal["compact", "full"] = "compact",
+                 cursor: str | None = None) -> dict:
     """Search arXiv and return full abstracts, versioned IDs and pagination.
 
     Plain mode requires every word/quoted phrase. Advanced mode preserves arXiv
@@ -90,9 +91,11 @@ def arxiv_search(query: str, limit: int = 10,
         query_mode: plain builds an AND query; advanced passes native syntax unchanged.
         search_scope: all, title_abstract or title; advanced mode requires all and its own field prefixes.
         from_year: Inclusive submission year lower bound, or null. This is not the journal publication year.
+        detail: compact (default) gives identifiers, status and a 200-character snippet for shortlisting; full gives complete abstracts and links.
         cursor: next_cursor from the previous page; null starts a new search with these arguments.
     """
     query = _s.text(query)
+    _s.choice(detail, "detail", ("compact", "full"))
     _s.integer(limit, "limit", 1, 100)
     _s.choice(sort, "sort", _SORTS)
     _s.choice(query_mode, "query_mode", ("plain", "advanced"))
@@ -109,7 +112,7 @@ def arxiv_search(query: str, limit: int = 10,
     root = _feed({"search_query": effective, "start": position, "max_results": min(limit, 30000-position), "sortBy": _SORTS[sort], "sortOrder": "descending"})
     results = [_paper(e) for e in root.findall("atom:entry", _NS)]
     total = int(root.findtext("opensearch:totalResults", namespaces=_NS))
-    return _s.page("arxiv", query, context, results, total, position + len(results), consumed, position)
+    return _s.page("arxiv", query, context, results, total, position + len(results), consumed, position, detail=detail)
 
 
 @tool

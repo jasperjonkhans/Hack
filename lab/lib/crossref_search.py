@@ -80,6 +80,7 @@ def crossref_search(query: str, limit: int = 10,
                     sort: Literal["relevance", "citations", "recent"] = "relevance",
                     search_scope: Literal["all", "bibliographic"] = "all",
                     author_query: str | None = None, from_year: int | None = None,
+                    detail: Literal["compact", "full"] = "compact",
                     cursor: str | None = None) -> dict:
     """Search the Crossref DOI registry (all disciplines, publisher-supplied metadata).
 
@@ -94,9 +95,11 @@ def crossref_search(query: str, limit: int = 10,
         search_scope: all searches every field; bibliographic matches titles, authors, venues and years.
         author_query: Fuzzy author-search hint, e.g. 'Maynard'; NOT an exact author filter. Verify returned authors.
         from_year: Inclusive publication year lower bound, or null for no bound.
+        detail: compact (default) gives identifiers, status and a 200-character snippet for shortlisting; full gives complete abstracts and links.
         cursor: next_cursor from the previous page; null starts a new search. Keep other arguments unchanged.
     """
     query = _s.text(query)
+    _s.choice(detail, "detail", ("compact", "full"))
     _s.integer(limit, "limit", 1, 100)
     _s.choice(sort, "sort", _SORTS)
     _s.choice(search_scope, "search_scope", _SCOPES)
@@ -117,7 +120,7 @@ def crossref_search(query: str, limit: int = 10,
         raise ValueError("missing Crossref items")
     results = [_paper(item) for item in message["items"] if item.get("title")]
     out = _s.page("crossref", query, context, results, message.get("total-results"),
-                  message.get("next-cursor"), consumed, position, fetched_count=len(message["items"]))
+                  message.get("next-cursor"), consumed, position, fetched_count=len(message["items"]), detail=detail)
     if author_query:
         out["warning"] = "author_query is a fuzzy search hint, not an author constraint. Verify authors and topic relevance in each result."
     return out

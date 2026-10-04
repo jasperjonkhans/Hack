@@ -51,7 +51,7 @@ def main() -> int:
         undocumented = [k for k, v in props.items() if not v.get("description")]
         print(f"\n=== {name}  params: {list(props)}  undocumented: {undocumented or 'none'}")
         for args in cases:
-            out = fn(**args)
+            out = fn(**args, detail="full")
             ok = "error" not in out and len(out["results"]) > 0
             failures += not ok
             print(f"{'PASS' if ok else 'FAIL'}  {json.dumps(args)}  → {out.get('total_matches')} matches")
@@ -66,7 +66,7 @@ def main() -> int:
                 "preprints excluded": all(r["is_preprint"] is False for r in results) if args.get("include_preprints") is False else True,
             }
             if out["next_cursor"]:
-                next_page = fn(**args, cursor=out["next_cursor"])
+                next_page = fn(**args, detail="full", cursor=out["next_cursor"])
                 checks["next page"] = "error" not in next_page and bool(next_page["results"])
                 checks["pages do not overlap"] = "error" not in next_page and not ({r["id"] for r in results} & {r["id"] for r in next_page["results"]})
             spec = importlib.util.spec_from_file_location(name, TOOLS_DIR / f"{name}.py")

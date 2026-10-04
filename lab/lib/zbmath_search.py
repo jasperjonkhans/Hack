@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 import re
+from typing import Literal
 import urllib.parse
 
 from omnigent_client.tools import tool
@@ -47,6 +48,7 @@ def _paper(doc):
 @tool
 @_s.guarded
 def zbmath_search(query: str, limit: int = 10, from_year: int | None = None,
+                  detail: Literal["compact", "full"] = "compact",
                   cursor: str | None = None) -> dict:
     """Search zbMATH Open, the curated database of mathematics literature since 1868.
 
@@ -60,9 +62,11 @@ def zbmath_search(query: str, limit: int = 10, from_year: int | None = None,
         query: zbMATH search string; plain words, quoted phrases and field prefixes.
         limit: Page size, 1-100. Keep unchanged when following a cursor.
         from_year: Inclusive publication year lower bound, or null for no bound.
+        detail: compact (default) gives identifiers, status and a 200-character snippet for shortlisting; full gives complete abstracts and links.
         cursor: next_cursor from the previous page; null starts a new search. Keep other arguments unchanged.
     """
     query = _s.text(query)
+    _s.choice(detail, "detail", ("compact", "full"))
     _s.integer(limit, "limit", 1, 100)
     _s.year(from_year)
     effective = query + (f" py:{from_year:04d}-3000" if from_year is not None else "")
@@ -75,12 +79,12 @@ def zbmath_search(query: str, limit: int = 10, from_year: int | None = None,
         if exc.details["code"] != "not_found":
             raise
         # zbMATH answers HTTP 404 when a search has no matches.
-        return _s.page("zbmath", query, context, [], 0, None, consumed, position)
+        return _s.page("zbmath", query, context, [], 0, None, consumed, position, detail=detail)
     if not isinstance(data.get("result"), list):
         raise ValueError("missing zbMATH results")
     results = [_paper(doc) for doc in data["result"] if (doc.get("title") or {}).get("title")]
     return _s.page("zbmath", query, context, results, data["status"]["nr_total_results"],
-                   position + 1, consumed, position, fetched_count=len(data["result"]))
+                   position + 1, consumed, position, fetched_count=len(data["result"]), detail=detail)
 
 
 @tool

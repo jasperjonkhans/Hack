@@ -30,6 +30,13 @@ tools with networking disabled, which breaks every provider.
 
 ## Searching and continuing
 
+Search tools default to `detail="compact"`: identifiers, title, first three
+authors, year, venue, type, citation count, `is_preprint`/`is_retracted` and a
+200-character `snippet`. That is about 60% smaller than `detail="full"` (roughly
+1.8k vs 4.5k tokens for 10 OpenAlex results). Shortlist from compact results,
+then read full abstracts with the `*_get_paper` tools or `detail="full"`. The
+detail level can change between pages without invalidating the cursor.
+
 Search returns `results`, `total_matches`, `returned_count`, `has_more`,
 `next_cursor`, `effective_query` and `retrieved_at`. Pass `next_cursor` back as
 `cursor`, keeping every other argument unchanged. Page sizes are 1–100; start

@@ -62,6 +62,7 @@ def europepmc_search(query: str, limit: int = 10,
                      from_year: int | None = None, include_preprints: bool = True,
                      search_scope: Literal["all", "title_abstract", "title"] = "title_abstract",
                      query_mode: Literal["plain", "advanced"] = "plain",
+                     detail: Literal["compact", "full"] = "compact",
                      cursor: str | None = None) -> dict:
     """Search biomedical literature with full abstracts and cursor pagination.
 
@@ -76,9 +77,11 @@ def europepmc_search(query: str, limit: int = 10,
         include_preprints: Whether to include source PPR (preprints).
         search_scope: title_abstract (default), title or all; advanced mode requires all and defines its own fields.
         query_mode: plain for words/phrases; advanced for native fields, Boolean operators or ranges.
+        detail: compact (default) gives identifiers, status and a 200-character snippet for shortlisting; full gives complete abstracts and links.
         cursor: next_cursor from the previous page; null starts a new search with these arguments.
     """
     query = _s.text(query)
+    _s.choice(detail, "detail", ("compact", "full"))
     _s.integer(limit, "limit", 1, 100)
     _s.choice(sort, "sort", _SORTS)
     _s.choice(search_scope, "search_scope", _SCOPES)
@@ -107,7 +110,7 @@ def europepmc_search(query: str, limit: int = 10,
         params["sort"] = _SORTS[sort]
     data = _get_json(params)
     return _s.page("europepmc", query, context, [_paper(p) for p in data["resultList"]["result"]],
-                   data["hitCount"], data.get("nextCursorMark"), consumed, position)
+                   data["hitCount"], data.get("nextCursorMark"), consumed, position, detail=detail)
 
 
 @tool

@@ -168,7 +168,24 @@ def read_cursor(cursor, context, initial):
         raise SearchError("invalid_arguments", "Invalid cursor, or query/filter/sort/limit changed. Restart without a cursor.") from None
 
 
-def page(provider, query, context, results, total, position, consumed, previous, *, fetched_count=None):
+_SNIPPET_CHARS = 200
+_COMPACT_FIELDS = ("source", "id", "canonical_id", "identifiers", "title", "year", "venue", "type",
+                   "doi", "cited_by", "is_preprint", "is_retracted")
+
+
+def compact(paper):
+    """Shortlisting view of a record: identity, status and a short snippet instead of the abstract."""
+    out = {k: paper.get(k) for k in _COMPACT_FIELDS}
+    names = [n for n in (paper.get("authors") or "").split(", ") if n]
+    out["authors"] = ", ".join(names[:3]) + (" et al." if len(names) > 3 else "") if names else None
+    abstract = paper.get("abstract") or ""
+    if len(abstract) > _SNIPPET_CHARS:
+        abstract = abstract[:_SNIPPET_CHARS].rsplit(" ", 1)[0] + "…"
+    out["snippet"] = abstract or None
+    return out
+
+
+def page(provider, query, context, results, total, position, consumed, previous, *, fetched_count=None, detail="full"):
     if type(total) is not int or total < 0:
         raise ValueError("missing result count")
     fetched_count = len(results) if fetched_count is None else fetched_count
@@ -183,8 +200,10 @@ def page(provider, query, context, results, total, position, consumed, previous,
     cursor = None
     if more:
         cursor = base64.urlsafe_b64encode(json.dumps({"fingerprint": _fingerprint(context), "position": position, "consumed": consumed}).encode()).decode()
+    if detail == "compact":
+        results = [compact(r) for r in results]
     return {"source": provider, "query": query, "effective_query": context,
-            "total_matches": total, "returned_count": len(results), "fetched_count": fetched_count,
+            "total_matches": total, "returned_count": len(results), "fetched_count": fetched_count, "detail": detail,
             "skipped_count": fetched_count - len(results), "has_more": more,
             "next_cursor": cursor, "results": results, "retrieved_at": timestamp()}
 

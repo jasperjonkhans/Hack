@@ -36,11 +36,31 @@ def oa_page(identifier='W1', total=2, cursor='next'):
 class SearchTests(unittest.TestCase):
     def test_full_abstract_and_normalised_doi_and_status(self):
         with patch.object(OA._s, 'fetch', return_value=oa_page()):
-            paper = OA.openalex_search('test')['results'][0]
+            paper = OA.openalex_search('test', detail='full')['results'][0]
         self.assertGreater(len(paper['abstract']), 500)
         self.assertFalse(paper['abstract_truncated'])
         self.assertEqual(paper['doi'], '10.1234/abc')
         self.assertTrue(paper['is_retracted'])
+
+    def test_compact_is_default_and_keeps_identity_and_status(self):
+        with patch.object(OA._s, 'fetch', return_value=oa_page()):
+            paper = OA.openalex_search('test')['results'][0]
+        self.assertNotIn('abstract', paper)
+        self.assertLessEqual(len(paper['snippet']), 201)
+        self.assertTrue(paper['snippet'].endswith('…'))
+        self.assertEqual(paper['doi'], '10.1234/abc')
+        self.assertTrue(paper['is_retracted'])
+        self.assertIn('openalex', paper['identifiers'])
+
+    def test_detail_can_change_between_pages(self):
+        with patch.object(OA._s, 'fetch', side_effect=[oa_page(), oa_page('W2', cursor=None)]):
+            first = OA.openalex_search('test')
+            second = OA.openalex_search('test', detail='full', cursor=first['next_cursor'])
+        self.assertNotIn('error', second)
+        self.assertIn('abstract', second['results'][0])
+
+    def test_invalid_detail_is_rejected(self):
+        self.assertEqual(OA.openalex_search('test', detail='short')['error']['code'], 'invalid_arguments')
 
     def test_cursor_retrieves_next_page_and_finishes(self):
         with patch.object(OA._s, 'fetch', side_effect=[oa_page(), oa_page('W2', cursor=None)]):

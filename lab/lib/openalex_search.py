@@ -66,6 +66,7 @@ def openalex_search(query: str, limit: int = 10,
                     sort: Literal["relevance", "citations", "recent"] = "relevance",
                     from_year: int | None = None,
                     search_scope: Literal["all", "title_abstract", "title"] = "title_abstract",
+                    detail: Literal["compact", "full"] = "compact",
                     cursor: str | None = None) -> dict:
     """Search scholarly works; return full available abstracts and a continuation cursor.
 
@@ -78,9 +79,11 @@ def openalex_search(query: str, limit: int = 10,
         sort: Relevance, citation count or most recent publication first.
         from_year: Inclusive publication year lower bound, or null for no bound.
         search_scope: title_abstract (default), title, or all (includes full text/keywords).
+        detail: compact (default) gives identifiers, status and a 200-character snippet for shortlisting; full gives complete abstracts and links.
         cursor: next_cursor from the previous page; null starts a new search. Keep other arguments unchanged.
     """
     query = _s.text(query)
+    _s.choice(detail, "detail", ("compact", "full"))
     _s.integer(limit, "limit", 1, 100)
     _s.choice(sort, "sort", _SORTS)
     _s.choice(search_scope, "search_scope", _SCOPES)
@@ -94,7 +97,7 @@ def openalex_search(query: str, limit: int = 10,
     if not isinstance(data.get("results"), list) or not isinstance(data.get("meta"), dict):
         raise ValueError("missing results/meta")
     return _s.page("openalex", query, context, [_paper(w) for w in data["results"]],
-                   data["meta"].get("count"), data["meta"].get("next_cursor"), consumed, position)
+                   data["meta"].get("count"), data["meta"].get("next_cursor"), consumed, position, detail=detail)
 
 
 @tool
