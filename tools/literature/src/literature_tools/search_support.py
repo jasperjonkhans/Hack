@@ -13,6 +13,7 @@ import functools
 import hashlib
 import http.client
 import importlib.util
+import inspect
 import json
 import os
 from pathlib import Path
@@ -87,8 +88,14 @@ def export(fn, module_name):
     Omnigent only registers @tool functions whose __module__ is the tool file
     itself, so the copy carries the tool metadata under the caller's module name.
     """
+    optional = {name for name, p in inspect.signature(fn).parameters.items() if p.default is None}
+
     @functools.wraps(fn)
     def exported(*args, **kwargs):
+        # Models often send "" or "null" for an optional argument instead of omitting it.
+        for name in optional & kwargs.keys():
+            if isinstance(kwargs[name], str) and kwargs[name].strip().lower() in ("", "null", "none"):
+                kwargs[name] = None
         return fn(*args, **kwargs)
     exported.__module__ = module_name
     return exported

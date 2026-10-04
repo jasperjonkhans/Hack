@@ -60,6 +60,16 @@ class SearchTests(unittest.TestCase):
         self.assertNotIn('error', second)
         self.assertIn('abstract', second['results'][0])
 
+    def test_agent_tools_treat_empty_optional_arguments_as_omitted(self):
+        CR = load('crossref_search')
+        tool = SUP.export(CR.crossref_search, 'crossref_search')
+        page = json.dumps({'status': 'ok', 'message': {'items': [], 'total-results': 0}}).encode()
+        with patch.object(CR._s, 'fetch', return_value=page):
+            for empty in ('', 'null', 'None'):
+                result = tool('protein folding', author_query=empty, from_year=empty, cursor=empty)
+                self.assertNotIn('error', result, empty)
+                self.assertNotIn('warning', result)
+
     def test_settings_fall_back_to_repository_dotenv(self):
         env = {k: v for k, v in os.environ.items() if k != 'OPENALEX_API_KEY'}
         with patch.dict(os.environ, env, clear=True), patch.object(OA._s, '_dotenv', return_value={'OPENALEX_API_KEY': 'from-file'}), \
