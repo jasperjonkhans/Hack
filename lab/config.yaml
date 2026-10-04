@@ -10,7 +10,7 @@ executor:
     harness: pi
     system_prompt_mode: replace
     context_files: false
-  model: stealth/space-bunny-alpha
+  model: deepseek/deepseek-v4.1-flash
   auth:
     type: provider
     name: openrouter

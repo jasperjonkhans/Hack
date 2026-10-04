@@ -6,7 +6,7 @@ executor:
   config:
     harness: pi
     context_files: false
-  model: stealth/space-bunny-alpha
+  model: deepseek/deepseek-v4.1-flash
   auth:
     type: provider
     name: openrouter
