@@ -1,4 +1,8 @@
-"""Shared HTTP, pagination and evidence utilities; no third-party HTTP dependencies."""
+"""Shared HTTP, pagination and record utilities for the provider modules in lab/lib/.
+
+No third-party HTTP dependencies. This file defines no tools itself: agents
+re-export the provider tools they need from their own tools/python/ files.
+"""
 from __future__ import annotations
 
 import base64
@@ -8,6 +12,7 @@ from email.utils import parsedate_to_datetime
 import functools
 import hashlib
 import http.client
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -18,9 +23,6 @@ import typing
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
-
-from omnigent_client.tools import tool
-
 
 class SearchError(Exception):
     def __init__(self, code, message, *, retryable=False, status=None, retry_after=None):
@@ -46,6 +48,27 @@ def guarded(fn):
     # Omnigent reads type hints from the wrapper when building its tool schema.
     wrapped.__annotations__ = typing.get_type_hints(fn)
     return wrapped
+
+
+def load(name):
+    """Import lab/lib/<name>.py by path; Omnigent does not put lab/lib on sys.path."""
+    spec = importlib.util.spec_from_file_location("_lab_" + name, Path(__file__).with_name(name + ".py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def export(fn, module_name):
+    """Re-export a provider tool from an agent's tool file.
+
+    Omnigent only registers @tool functions whose __module__ is the tool file
+    itself, so the copy carries the tool metadata under the caller's module name.
+    """
+    @functools.wraps(fn)
+    def exported(*args, **kwargs):
+        return fn(*args, **kwargs)
+    exported.__module__ = module_name
+    return exported
 
 
 def text(value, name="query"):
@@ -242,53 +265,3 @@ def get_json(provider, url, *, headers=None):
     if not isinstance(data, dict) or data.get("error") or data.get("errCode"):
         raise SearchError("invalid_response", f"{provider} returned an error or unexpected JSON structure.")
     return data
-
-
-@tool
-@guarded
-def deduplicate_papers(papers: list[dict]) -> dict:
-    """Group repeated search hits by stable identifiers, retaining every source/version.
-
-    Shared DOI, PMID, PMCID or versionless arXiv ID links records; titles alone
-    never establish identity. Counts measure works, not independent evidence.
-
-    Args:
-        papers: Combined results from searches, pages or paper-detail lookups.
-    """
-    if not isinstance(papers, list) or any(not isinstance(p, dict) or not p.get("source") or not p.get("id") for p in papers):
-        raise SearchError("invalid_arguments", "papers must contain search records with source and id.")
-    parents = list(range(len(papers)))
-    def root(i):
-        while parents[i] != i:
-            parents[i] = parents[parents[i]]
-            i = parents[i]
-        return i
-    owners = {}
-    for i, paper in enumerate(papers):
-        ids = dict(paper.get("identifiers") or {})
-        ids[paper["source"]] = paper["id"]
-        normal_doi = doi(paper.get("doi") or ids.get("doi"))
-        if normal_doi:
-            ids["doi"] = normal_doi
-        for namespace, value in ids.items():
-            if not value or namespace not in ("doi", "pmid", "pmcid", "arxiv", "zbl", "openalex", "europepmc", "crossref", "zbmath", paper["source"]):
-                continue
-            value = str(value)
-            if namespace == "arxiv":
-                value = re.sub(r"v\d+$", "", value.rsplit("/abs/", 1)[-1])
-            key = namespace + ":" + value
-            if key in owners:
-                parents[root(i)] = root(owners[key])
-            else:
-                owners[key] = i
-    groups = {}
-    for i, paper in enumerate(papers):
-        groups.setdefault(root(i), []).append(paper)
-    output = []
-    for records in groups.values():
-        normal_doi = next((doi(p.get("doi")) for p in records if doi(p.get("doi"))), None)
-        canonical = "doi:" + normal_doi if normal_doi else records[0].get("canonical_id", records[0]["source"] + ":" + records[0]["id"])
-        output.append({"canonical_id": canonical, "records": records,
-                       "sources": sorted({p["source"] for p in records}),
-                       "is_retracted": True if any(p.get("is_retracted") is True for p in records) else None})
-    return {"input_count": len(papers), "unique_count": len(output), "groups": output}

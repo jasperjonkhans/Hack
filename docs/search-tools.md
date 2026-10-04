@@ -1,9 +1,32 @@
-# Research search tools
+# Literature search tools
 
-The original seven researcher tools are: `openalex_search`, `europepmc_search`,
-`arxiv_search`, their three corresponding `*_get_paper` tools, and
-`deduplicate_papers`. They use the standard library plus Omnigent's tool decorator.
-Keep `search_support.py` alongside the provider scripts when deploying the bundle.
+The tools use the standard library plus Omnigent's tool decorator.
+
+## Layout
+
+```
+lab/
+  lib/                       provider modules + search_support.py (shared code)
+  agents/
+    scout/tools/python/      literature_search.py: re-exports the Scout's tools
+    verifier/tools/python/   source_lookup.py: re-exports the Verifier's tools
+```
+
+Omnigent gives each agent only the tools in its own `tools/python/` folder,
+and every file there must define at least one `@tool`. The implementations
+therefore live once in `lab/lib/`, and each agent's file re-exports the subset
+it needs with `search_support.export`. To give an agent another tool, add one
+`export` line to its file. `lab/lib/` must stay inside the bundle root, because
+Omnigent ships the whole bundle and the agent files find it relative to
+themselves.
+
+| Agent | Tools |
+|---|---|
+| Scout | `openalex_search`, `openalex_get_paper`, `arxiv_search`, `arxiv_get_paper`, `europepmc_search`, `europepmc_get_paper`, `crossref_search`, `zbmath_search`, `zbmath_get_paper`, `loogle_search` |
+| Verifier | `crossref_get_paper`, `openalex_get_paper`, `arxiv_get_paper`, `europepmc_get_paper`, `zbmath_get_paper`, `unpaywall_find_full_text`, `loogle_search` |
+
+Do not set `sandbox.container_image` for these agents: Omnigent runs container
+tools with networking disabled, which breaks every provider.
 
 ## Searching and continuing
 
@@ -11,8 +34,9 @@ Search returns `results`, `total_matches`, `returned_count`, `has_more`,
 `next_cursor`, `effective_query` and `retrieved_at`. Pass `next_cursor` back as
 `cursor`, keeping every other argument unchanged. Page sizes are 1–100; start
 with 10 because complete abstracts can be long. Cursors are bound to the query,
-provider, filters, sort and page size. They do not freeze an upstream index;
-deduplicate across pages and searches as well as across providers.
+provider, filters, sort and page size. They do not freeze an upstream index,
+so pages and providers can return the same work; the academic database (#11)
+merges duplicates when papers are saved.
 
 OpenAlex and Europe PMC default to `search_scope="title_abstract"` for every
 sort. Use `all` for broader discovery or `title` for targeted searches. Sorting
@@ -49,12 +73,9 @@ status. False is not a guarantee of scientific reliability or peer review.
 arXiv's preprint flag describes the repository version, which can also have a
 published DOI. Unknown citation counts remain null rather than becoming zero.
 
-Call `deduplicate_papers` on combined results before assigning evidence IDs.
-It groups by shared DOI, PMID, PMCID, arXiv ID without its version suffix, or
-provider ID. It retains every source/version record in each group. Similar
-titles alone do not establish identity; preprints with separate identifiers
-may still need manual linking. A merged group is one work, not several pieces
-of independent evidence. Citation counts from different sources are not summed.
+Records carry `identifiers` (DOI, PMID, PMCID, versionless arXiv ID, provider
+ID) so the academic database can merge the same work found by several providers.
+A merged work is one piece of evidence, not several.
 
 ## Failures and request limits
 
@@ -86,7 +107,7 @@ python scripts/smoke_search_tools.py
 ```
 
 Offline tests cover failure handling, query scope, pagination, identifiers,
-version-preserving deduplication, Omnigent discovery and cross-process spacing.
+each agent's tool set as Omnigent loads it, and cross-process spacing.
 Live checks cover six searches, filters, non-overlapping pages and detail lookups,
 plus known-paper retrieval from each provider. This small benchmark catches
 regressions; it does not establish exhaustive recall or evidence quality.
@@ -98,16 +119,13 @@ access lookup and Loogle declaration search.
 
 - Crossref's former `author` argument is now `author_query`. This is a fuzzy
   search hint, not an author filter. Calls using it return a warning to verify
-  author identity and topic relevance. Live Crossref pages can overlap; combine
-  them with `deduplicate_papers` before counting evidence. Update existing callers and restart
-  searches using old cursors after migrating this argument.
+  author identity and topic relevance. Live Crossref pages can overlap.
 - Pages now report `fetched_count` and `skipped_count`. Crossref and zbMATH may
   omit untitled records, but those records still count towards pagination.
   An empty returned page with `has_more=true` should be followed using its
   cursor. `total_matches` is the upstream count, including skipped records.
-- Deduplication recognises zbMATH IDs, Zbl numbers and each provider's own ID,
-  preserving all representations. Provider IDs are namespaced to prevent
-  unrelated providers' numeric IDs from colliding.
+- zbMATH records carry both the zbMATH document ID and the Zbl number in
+  `identifiers`.
 - Unpaywall requires `CONTACT_EMAIL`, available from the shell environment.
   Responses are checked for matching DOI, Boolean access status and valid
   location structure. The best location is first. A negative result means

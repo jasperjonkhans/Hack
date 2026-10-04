@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 
-TOOLS = Path(__file__).resolve().parents[1] / 'lab/agents/researcher/tools/python'
+TOOLS = Path(__file__).resolve().parents[1] / 'lab/lib'
 
 
 def load(name):
@@ -26,10 +26,8 @@ def crossref():
     first_ids = {p['id'] for p in first['results']}
     second_ids = {p['id'] for p in second['results']}
     assert second_ids - first_ids, 'Crossref continuation made no progress'
-    merged = success(load('search_support').deduplicate_papers(first['results'] + second['results']))
-    assert merged['unique_count'] == len(first_ids | second_ids)
     if first_ids & second_ids:
-        print(f'  Crossref upstream overlap: {len(first_ids & second_ids)} DOI(s); deduplication verified', flush=True)
+        print(f'  Crossref upstream overlap: {len(first_ids & second_ids)} DOI(s)', flush=True)
     assert success(m.crossref_get_paper('10.1038/nature14539'))['paper']['doi'] == '10.1038/nature14539'
 
 

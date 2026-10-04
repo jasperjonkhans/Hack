@@ -11,7 +11,8 @@ import unittest
 from unittest.mock import patch
 import urllib.error
 
-TOOLS = Path(__file__).resolve().parents[1] / 'lab/agents/researcher/tools/python'
+LAB = Path(__file__).resolve().parents[1] / 'lab'
+TOOLS = LAB / 'lib'
 
 def load(name):
     spec = importlib.util.spec_from_file_location(name, TOOLS / (name + '.py'))
@@ -120,28 +121,26 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(paper['abstract'], 'p < 0.05')
         self.assertEqual(paper['identifiers']['pmid'], '123')
 
-    def test_dedup_retains_versions_and_source_records(self):
-        papers = [SUP.record('arxiv', '1706.03762v1', title='A', doi_value='10.1234/ABC'),
-                  SUP.record('openalex', 'W1', title='B', doi_value='https://doi.org/10.1234/abc'),
-                  SUP.record('arxiv', '1706.03762v2', title='A revised'),
-                  SUP.record('openalex', 'W2', title='A')]
-        result = SUP.deduplicate_papers(papers)
-        self.assertEqual(result['unique_count'], 2)
-        self.assertEqual(len(result['groups'][0]['records']), 3)
-        self.assertEqual(result['groups'][0]['sources'], ['arxiv', 'openalex'])
-
     def test_openalex_lookup_accepts_doi_url(self):
         with patch.object(OA._s, 'fetch', return_value=json.dumps(work()).encode()):
             self.assertEqual(OA.openalex_get_paper('https://doi.org/10.1234/abc')['paper']['doi'], '10.1234/abc')
 
-    def test_tool_schemas_load_in_omnigent(self):
+    def test_agent_tool_files_load_in_omnigent(self):
         from omnigent.tools.local import _import_tool_module, _extract_decorated_functions
-        found = []
-        for filename in ('openalex_search.py', 'europepmc_search.py', 'arxiv_search.py', 'search_support.py'):
-            path = TOOLS / filename
-            module = _import_tool_module(agent_name='researcher', tool_path=path)
-            found.extend(_extract_decorated_functions(agent_name='researcher', tool_path=path, module=module))
-        self.assertEqual(len(found), 7)
+        expected = {
+            'scout': {'openalex_search', 'openalex_get_paper', 'arxiv_search', 'arxiv_get_paper',
+                      'europepmc_search', 'europepmc_get_paper', 'crossref_search',
+                      'zbmath_search', 'zbmath_get_paper', 'loogle_search'},
+            'verifier': {'crossref_get_paper', 'openalex_get_paper', 'arxiv_get_paper',
+                         'europepmc_get_paper', 'zbmath_get_paper', 'unpaywall_find_full_text',
+                         'loogle_search'},
+        }
+        for agent, names in expected.items():
+            found = set()
+            for path in (LAB / 'agents' / agent / 'tools/python').glob('*.py'):
+                module = _import_tool_module(agent_name=agent, tool_path=path.resolve())
+                found |= {name for name, _, _ in _extract_decorated_functions(agent_name=agent, tool_path=path, module=module)}
+            self.assertEqual(found, names, agent)
 
 class TransportTests(unittest.TestCase):
     def test_authentication_failure_is_not_retried(self):

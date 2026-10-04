@@ -11,7 +11,6 @@ CR = load('crossref_search')
 ZB = load('zbmath_search')
 UP = load('unpaywall_lookup')
 LO = load('loogle_search')
-SUP = load('search_support')
 
 
 def crossref_page(items, total=2, cursor='next'):
@@ -60,20 +59,6 @@ class CrossrefTests(unittest.TestCase):
 
 
 class ZbmathTests(unittest.TestCase):
-    def test_doi_less_repeated_record_is_one_work(self):
-        paper = SUP.record('zbmath', '123', title='A')
-        result = SUP.deduplicate_papers([paper, paper])
-        self.assertEqual(result['unique_count'], 1)
-        self.assertEqual(len(result['groups'][0]['records']), 2)
-
-    def test_zbl_links_records_with_different_provider_ids(self):
-        papers = [SUP.record('zbmath', '123', title='A', identifiers={'zbl': '0923.11018'}), SUP.record('zbmath', '456', title='A', identifiers={'zbl': '0923.11018'})]
-        self.assertEqual(SUP.deduplicate_papers(papers)['unique_count'], 1)
-
-    def test_provider_ids_are_namespaced(self):
-        papers = [SUP.record('zbmath', '123', title='A'), SUP.record('other', '123', title='A')]
-        self.assertEqual(SUP.deduplicate_papers(papers)['unique_count'], 2)
-
     def test_skipped_final_record_completes_search(self):
         data = {'result': [{'id': 123, 'title': {'title': 'A'}}, {'id': 456}], 'status': {'nr_total_results': 2}}
         with patch.object(ZB._s, 'fetch', return_value=json.dumps(data).encode()):
