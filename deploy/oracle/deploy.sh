@@ -22,9 +22,14 @@ main() {
     echo "could not read the omnigent version from uv.lock" >&2
     exit 1
   fi
-  export OMNIGENT_IMAGE_TAG="v$version"
-
   cd deploy/oracle
+  # Persist the tag in .env so manual `docker compose` commands resolve the same image.
+  if grep -q '^OMNIGENT_IMAGE_TAG=' .env; then
+    sed -i "s|^OMNIGENT_IMAGE_TAG=.*|OMNIGENT_IMAGE_TAG=v$version|" .env
+  else
+    echo "OMNIGENT_IMAGE_TAG=v$version" >> .env
+  fi
+
   docker compose pull --quiet
   docker compose up -d --remove-orphans
   # Built-in agents are seeded only at startup, so pick up demo/team changes.
@@ -36,7 +41,7 @@ main() {
 
   for _ in $(seq 60); do
     if curl -fsS -o /dev/null http://127.0.0.1:8000/health; then
-      echo "healthy: omnigent $OMNIGENT_IMAGE_TAG, $(git -C "$repo_dir" rev-parse --short HEAD)"
+      echo "healthy: omnigent v$version, $(git -C "$repo_dir" rev-parse --short HEAD)"
       exit 0
     fi
     sleep 2
