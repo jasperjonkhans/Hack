@@ -19,6 +19,22 @@ if ! command -v uv >/dev/null; then
   rm -rf "$tmp"
 fi
 
+# Omnigent's Claude, Codex and Pi harnesses need Node.js 22.10+.
+if ! node --version 2>/dev/null | grep -q '^v2[2-9]\.'; then
+  base=https://nodejs.org/dist/latest-v22.x
+  case $(uname -m) in
+    aarch64) node_arch=arm64 ;;
+    x86_64) node_arch=x64 ;;
+  esac
+  sums=$(curl -fsSL "$base/SHASUMS256.txt")
+  node_tarball=$(echo "$sums" | grep -oE "node-v22\.[0-9]+\.[0-9]+-linux-$node_arch\.tar\.xz" | head -1)
+  tmp=$(mktemp -d)
+  curl -fsSL -o "$tmp/$node_tarball" "$base/$node_tarball"
+  (cd "$tmp" && echo "$sums" | grep " $node_tarball\$" | sha256sum -c -)
+  sudo tar -xJf "$tmp/$node_tarball" -C /usr/local --strip-components=1 --exclude='*.md' --exclude=LICENSE
+  rm -rf "$tmp"
+fi
+
 if [[ ! -d "$REPO_DIR/.git" ]]; then
   sudo mkdir -p "$REPO_DIR"
   sudo chown "$USER:$USER" "$REPO_DIR"

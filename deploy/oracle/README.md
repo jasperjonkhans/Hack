@@ -26,7 +26,7 @@ git clone https://github.com/jasperjonkhans/Hack.git /opt/hack
 /opt/hack/deploy/oracle/deploy.sh
 ```
 
-`bootstrap-vm.sh` installs Docker and uv and writes `deploy/oracle/.env` with
+`bootstrap-vm.sh` installs Docker, uv and Node.js 22 and writes `deploy/oracle/.env` with
 generated secrets. It never overwrites an existing `.env`.
 
 ### Create the admin before exposing the UI
@@ -62,12 +62,11 @@ sudo cp /opt/hack/deploy/oracle/omnigent-host.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now omnigent-host
 ```
 
-Log in as `lab`. In `omnigent setup`, choose **Gateway** with base URL
-`https://openrouter.ai/api` and the OpenRouter key: the team agents use the
-Claude Code harness, which needs OpenRouter's Anthropic-compatible endpoint
-(`/api/v1` is for Codex and OpenAI-style agents). The key is stored under
-`~ubuntu/.omnigent/`, which agents on this host can read, so give the key a
-credit limit.
+Log in as `lab`. In `omnigent setup`, select **Claude** → **Install it now**
+(Claude Code's native installer, into `~/.local/bin`; the credential menu only
+appears once the CLI is installed), then **+ Add** → **OpenRouter — API key**
+and paste the key. The key is stored under `~ubuntu/.omnigent/`, which agents
+on this host can read, so give the key a credit limit.
 
 ### Continuous deployment
 
