@@ -1,5 +1,5 @@
 # Team Omnigent server on the Oracle VM. Start it with ./deploy.sh, which
-# pins OMNIGENT_IMAGE_TAG to the omnigent version locked in uv.lock.
+# writes OMNIGENT_IMAGE_TAG (the omnigent version locked in uv.lock) to .env.
 name: omnigent
 
 services:
@@ -19,7 +19,7 @@ services:
       retries: 5
 
   omnigent:
-    image: ghcr.io/omnigent-ai/omnigent-server:${OMNIGENT_IMAGE_TAG:?run ./deploy.sh, it sets OMNIGENT_IMAGE_TAG from uv.lock}
+    image: ghcr.io/omnigent-ai/omnigent-server:${OMNIGENT_IMAGE_TAG:?run ./deploy.sh, it writes OMNIGENT_IMAGE_TAG to .env}
     restart: unless-stopped
     depends_on:
       postgres:

@@ -46,23 +46,28 @@ Invite teammates from the account menu → **Members** → **Invite member**.
 
 ### Agent host
 
-Hosts belong to one Omnigent account: sessions owned by another user cannot
-run on it. The VM host therefore signs in as a shared team account.
+A host runs sessions only for the Omnigent account that registered it; other
+users get "not your host". Everyone keeps a personal account for signing in and
+sharing sessions. To run agents on the VM, sign in as the shared non-admin
+account `lab` (invite it from **Members** with admin unticked).
+
+On the VM, as `ubuntu`:
 
 ```bash
 sudo mkdir -p /etc/hack
-sudo tee /etc/hack/host.env >/dev/null <<'EOF'
-OMNIGENT_URL=https://130-61-237-227.sslip.io
-ANTHROPIC_API_KEY=
-EOF
-sudo chmod 600 /etc/hack/host.env && sudo chown ubuntu /etc/hack/host.env
+echo 'OMNIGENT_URL=https://130-61-237-227.sslip.io' | sudo tee /etc/hack/host.env
 /opt/hack/.venv/bin/omnigent login https://130-61-237-227.sslip.io
+/opt/hack/.venv/bin/omnigent setup
 sudo cp /opt/hack/deploy/oracle/omnigent-host.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now omnigent-host
 ```
 
-Fill in the model key in `/etc/hack/host.env` yourself. Agents running on the
-host can read its environment, so keep only what they need in that file.
+Log in as `lab`. In `omnigent setup`, choose **Gateway** with base URL
+`https://openrouter.ai/api` and the OpenRouter key: the team agents use the
+Claude Code harness, which needs OpenRouter's Anthropic-compatible endpoint
+(`/api/v1` is for Codex and OpenAI-style agents). The key is stored under
+`~ubuntu/.omnigent/`, which agents on this host can read, so give the key a
+credit limit.
 
 ### Continuous deployment
 
