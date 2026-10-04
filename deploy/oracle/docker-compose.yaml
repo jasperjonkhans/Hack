@@ -49,7 +49,12 @@ services:
       - "127.0.0.1:8000:8000"
 
   caddy:
-    image: caddy:2-alpine
+    # Pinned: deploy.sh pulls on every run. 2.11.6's new body-read idle deadline
+    # outlives the request and poisons keep-alive connections: after a proxied
+    # call of 60 s or more, every later request on that connection fails at once
+    # with 499 (caddyserver/caddy#8103, fixed in 2.11.7). Move to >= 2.11.7 once
+    # Docker Hub publishes it.
+    image: caddy:2.11.4-alpine
     restart: unless-stopped
     depends_on:
       - omnigent
