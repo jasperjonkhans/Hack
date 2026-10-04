@@ -74,9 +74,10 @@ The agents run on Pi only. Through Pi, Omnigent sends model ids containing
 `claude` to an Anthropic-format endpoint, which this OpenRouter credential does
 not configure, so pick non-Claude OpenRouter models.
 
-The Scout and Verifier read the database URLs, `CONTACT_EMAIL`,
-`OPENALEX_MAILTO` and `OPENALEX_API_KEY` from `/opt/hack/.env` (see
-`.env.example`).
+Mimir's Lead, Scouts and Verifiers read the database URLs, `CONTACT_EMAIL`,
+`S2_API_KEY`, `OPENALEX_MAILTO` and `OPENALEX_API_KEY` from `/opt/hack/.env`
+(see `.env.example`). Every deploy lists the ones that are missing as warnings
+in the **Deploy** run, by name only.
 
 ### Continuous deployment
 

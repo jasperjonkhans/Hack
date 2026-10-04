@@ -4,6 +4,26 @@
 # agent host, check health.
 set -euo pipefail
 
+# Flag agent settings missing from the repository .env in the deploy log, by
+# name only. Warnings, not failures: the server itself runs without them.
+check_env() {
+  local file=$1 key value
+  for key in ACADEMIC_DB_URL ACADEMIC_DB_READER_URL CONTACT_EMAIL \
+             S2_API_KEY OPENALEX_MAILTO OPENALEX_API_KEY; do
+    # The last assignment wins, as in academic_db's .env reader; strip quotes and spaces.
+    value=$(sed -nE "s/^[[:space:]]*$key[[:space:]]*=(.*)/\1/p" "$file" 2>/dev/null | tail -n 1 | tr -d "\"' \t" || true)
+    # Unset: empty, only a comment, or .env.example's CHANGE_ME placeholder.
+    if [[ -n $value && $value != \#* && $value != *CHANGE_ME* ]]; then
+      continue
+    fi
+    case $key in
+      ACADEMIC_DB_*) echo "::warning::$key is not set in $file: Mimir's database tools fail without it" ;;
+      CONTACT_EMAIL) echo "::warning::$key is not set in $file: the Verifier's Unpaywall fallback fails without it" ;;
+      *) echo "::warning::$key is not set in $file: optional, see .env.example" ;;
+    esac
+  done
+}
+
 # Wrapped in main so bash has read the whole file before git reset rewrites it.
 main() {
   local repo_dir=${REPO_DIR:-/opt/hack}
@@ -19,6 +39,7 @@ main() {
   # outside this project; a tool install puts it on PATH (~/.local/bin). The
   # editable install still reads this repository's .env.
   uv tool install --quiet --force --editable tools/academic_db
+  check_env "$repo_dir/.env"
 
   local version
   version=$(awk '$0 == "name = \"omnigent\"" { getline; gsub(/version = |"/, ""); print; exit }' uv.lock)
