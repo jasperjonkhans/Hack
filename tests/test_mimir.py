@@ -156,3 +156,11 @@ def test_picker_lists_only_mounted_agents(monkeypatch):
     assert [agent.name for agent in page.data] == ["Mimir"]
     assert (page.first_id, page.last_id) == ("a1", "a1")
     assert dataclasses.is_dataclass(page)
+
+
+def test_paper_limit_keyword_reaches_the_scouts():
+    lead = " ".join(load(LAB).instructions.split())
+    scout = " ".join(load(LAB / "agents" / "scout").instructions.split())
+    assert "limit=N" in lead and "Paper limit: N" in lead
+    assert "Without the keyword, never set a limit" in lead
+    assert "limit=N" in scout and "Paper limit: N" in scout
