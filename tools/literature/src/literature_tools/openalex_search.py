@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import importlib.util
-import os
 from pathlib import Path
 import re
 from typing import Literal
@@ -24,10 +23,10 @@ _SELECT = "id,doi,title,publication_year,cited_by_count,authorships,primary_loca
 def _get_json(path, params):
     params = dict(params)
     headers = {}
-    if os.environ.get("OPENALEX_API_KEY"):
-        headers["Authorization"] = "Bearer " + os.environ["OPENALEX_API_KEY"]
-    if os.environ.get("OPENALEX_MAILTO"):
-        params["mailto"] = os.environ["OPENALEX_MAILTO"]
+    if api_key := _s.setting("OPENALEX_API_KEY"):
+        headers["Authorization"] = "Bearer " + api_key
+    if mailto := _s.setting("OPENALEX_MAILTO"):
+        params["mailto"] = mailto
     url = path + "?" + urllib.parse.urlencode(params)
     if len(url.encode()) > 4094:
         raise _s.SearchError("invalid_arguments", "Query URL exceeds OpenAlex's limit; split OR clauses into smaller searches and deduplicate their results.")

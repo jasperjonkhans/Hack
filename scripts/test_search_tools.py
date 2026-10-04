@@ -224,5 +224,22 @@ with m.request_slot('test',0.08):
         self.assertGreaterEqual(starts[1] - starts[0], 0.07)
         self.assertGreaterEqual(starts[2] - starts[1], 0.07)
 
+class SettingTests(unittest.TestCase):
+    def test_environment_wins_then_repository_env_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / '.env').write_text('# comment\nCONTACT_EMAIL="team@example.org"\nOPENALEX_API_KEY=from-file\n')
+            package = root / 'tools/literature/src/literature_tools'
+            package.mkdir(parents=True)
+            with patch.object(SUP, '__file__', str(package / 'search_support.py')), patch.dict(os.environ, OPENALEX_API_KEY='from-env'):
+                os.environ.pop('CONTACT_EMAIL', None)
+                SUP._dotenv.cache_clear()
+                try:
+                    self.assertEqual(SUP.setting('CONTACT_EMAIL'), 'team@example.org')
+                    self.assertEqual(SUP.setting('OPENALEX_API_KEY'), 'from-env')
+                    self.assertIsNone(SUP.setting('UNSET_SETTING'))
+                finally:
+                    SUP._dotenv.cache_clear()
+
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import html
 import importlib.util
-import os
 from pathlib import Path
 import re
 from typing import Literal
@@ -29,8 +28,8 @@ _RELATIONS = ("has-preprint", "is-preprint-of", "is-version-of", "has-version")
 
 def _get(url, params=None):
     params = dict(params or {})
-    if os.environ.get("CONTACT_EMAIL"):
-        params["mailto"] = os.environ["CONTACT_EMAIL"]
+    if email := _s.setting("CONTACT_EMAIL"):
+        params["mailto"] = email
     data = _s.get_json("crossref", url + ("?" + urllib.parse.urlencode(params) if params else ""))
     if data.get("status") != "ok" or not isinstance(data.get("message"), dict):
         raise ValueError("unexpected Crossref envelope")

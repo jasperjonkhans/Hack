@@ -34,6 +34,31 @@ class SearchError(Exception):
             self.details["retry_after_seconds"] = round(max(0, retry_after), 1)
 
 
+@functools.cache
+def _dotenv():
+    """Parse the nearest .env above this package (the repository root)."""
+    for directory in Path(__file__).resolve().parents:
+        path = directory / ".env"
+        if path.is_file():
+            values = {}
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    values[key.strip()] = value.strip().strip("'\"")
+            return values
+    return {}
+
+
+def setting(name):
+    """Read a setting from the environment, falling back to the repository-root .env.
+
+    Omnigent passes local tools only an allowlist of the host's environment, so
+    settings for agents running on a host must come from .env.
+    """
+    return os.environ.get(name) or _dotenv().get(name)
+
+
 def guarded(fn):
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
