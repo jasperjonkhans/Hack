@@ -1,4 +1,4 @@
-"""Shared HTTP, pagination and record utilities for the provider modules in lab/lib/.
+"""Shared HTTP, pagination and record utilities for the provider modules in this package.
 
 No third-party HTTP dependencies. This file defines no tools itself: agents
 re-export the provider tools they need from their own tools/python/ files.
@@ -51,7 +51,7 @@ def guarded(fn):
 
 
 def load(name):
-    """Import lab/lib/<name>.py by path; Omnigent does not put lab/lib on sys.path."""
+    """Import a sibling provider module by path, sharing the loading style of the provider modules."""
     spec = importlib.util.spec_from_file_location("_lab_" + name, Path(__file__).with_name(name + ".py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -154,7 +154,8 @@ def _fingerprint(context):
 
 
 def read_cursor(cursor, context, initial):
-    if cursor is None:
+    # Some harnesses send "" or "null" for an omitted optional argument.
+    if cursor is None or (isinstance(cursor, str) and cursor.strip().lower() in ("", "null", "none")):
         return initial, 0
     try:
         payload = json.loads(base64.urlsafe_b64decode(text(cursor, "cursor").encode()))

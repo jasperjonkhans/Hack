@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 
-TOOLS = Path(__file__).resolve().parents[1] / 'lab/lib'
+TOOLS = Path(__file__).resolve().parents[1] / 'tools/literature/src/literature_tools'
 
 
 def load(name):

@@ -4,6 +4,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -12,7 +13,7 @@ from unittest.mock import patch
 import urllib.error
 
 LAB = Path(__file__).resolve().parents[1] / 'lab'
-TOOLS = LAB / 'lib'
+TOOLS = LAB.parent / 'tools/literature/src/literature_tools'
 
 def load(name):
     spec = importlib.util.spec_from_file_location(name, TOOLS / (name + '.py'))
@@ -58,6 +59,11 @@ class SearchTests(unittest.TestCase):
             second = OA.openalex_search('test', detail='full', cursor=first['next_cursor'])
         self.assertNotIn('error', second)
         self.assertIn('abstract', second['results'][0])
+
+    def test_empty_or_null_cursor_starts_a_new_search(self):
+        for cursor in ('', 'null', 'None'):
+            with patch.object(OA._s, 'fetch', return_value=oa_page()):
+                self.assertNotIn('error', OA.openalex_search('test', cursor=cursor), cursor)
 
     def test_invalid_detail_is_rejected(self):
         self.assertEqual(OA.openalex_search('test', detail='short')['error']['code'], 'invalid_arguments')
@@ -150,16 +156,23 @@ class SearchTests(unittest.TestCase):
         expected = {
             'scout': {'openalex_search', 'openalex_get_paper', 'arxiv_search', 'arxiv_get_paper',
                       'europepmc_search', 'europepmc_get_paper', 'crossref_search',
-                      'zbmath_search', 'zbmath_get_paper', 'loogle_search'},
+                      'zbmath_search', 'zbmath_get_paper', 'loogle_search', 'read_full_text'},
             'verifier': {'crossref_get_paper', 'openalex_get_paper', 'arxiv_get_paper',
                          'europepmc_get_paper', 'zbmath_get_paper', 'unpaywall_find_full_text',
                          'loogle_search', 'check_quote', 'read_full_text'},
         }
         for agent, names in expected.items():
-            found = set()
-            for path in (LAB / 'agents' / agent / 'tools/python').glob('*.py'):
-                module = _import_tool_module(agent_name=agent, tool_path=path.resolve())
-                found |= {name for name, _, _ in _extract_decorated_functions(agent_name=agent, tool_path=path, module=module)}
+            # Omnigent copies only the agent folder when it is run on its own.
+            with tempfile.TemporaryDirectory() as directory:
+                copy = Path(directory) / agent
+                shutil.copytree(LAB / 'agents' / agent, copy, ignore=shutil.ignore_patterns('__pycache__'))
+                found = set()
+                for path in (copy / 'tools/python').glob('*.py'):
+                    module = _import_tool_module(agent_name=agent, tool_path=path.resolve())
+                    names_in_file = [name for name, _, _ in _extract_decorated_functions(agent_name=agent, tool_path=path, module=module)]
+                    # Omnigent only dispatches a local tool whose name matches its file name.
+                    self.assertEqual(names_in_file, [path.stem], path.name)
+                    found |= set(names_in_file)
             self.assertEqual(found, names, agent)
 
 class TransportTests(unittest.TestCase):

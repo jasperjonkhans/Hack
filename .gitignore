@@ -16,3 +16,7 @@ wheels/
 
 # Local reference copies
 *.pdf
+
+# Omnigent/Pi runtime files
+.pi/
+mtime-test-*/

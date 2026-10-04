@@ -1,4 +1,4 @@
-"""Smoke-test the literature search tools in lab/lib/ against the live APIs.
+"""Smoke-test the literature search tools in tools/literature against the live APIs.
 
 Run with Omnigent's Python (the tools import omnigent_client):
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 from omnigent_client.tools import get_tool_metadata
 
-TOOLS_DIR = Path(__file__).resolve().parents[1] / "lab/lib"
+TOOLS_DIR = Path(__file__).resolve().parents[1] / "tools/literature/src/literature_tools"
 CASES = {
     "openalex_search": [
         {"query": "pyrethroid resistance Anopheles", "limit": 3},
