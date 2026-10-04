@@ -33,7 +33,7 @@ From the repository root, launch `omni pi` (or `.venv/bin/omnigent pi`) and allo
 
 The controller runs in the background while Pi remains interactive. Its footer shows round progress and its final checkpoint is added to the chat without triggering another model turn. Run references follow the current Pi session branch. Leaving, replacing or reloading the session stops its controller; interrupted dispatched rounds are not replayed automatically. The model-facing tools can start research or read status, never approve experiments.
 
-The extension uses Omnigent's native Pi bridge server URL when present, otherwise `http://localhost:6767`. Configure the Pi/provider backend and an online Pi-capable local runner. No remote/managed hosts are supported in this starter. Scouts and Verifiers need `ACADEMIC_DB_URL` and `ACADEMIC_DB_READER_URL` in the repository-root `.env` (see `.env.example`).
+The extension uses Omnigent's native Pi bridge server URL when present, otherwise `http://localhost:6767`. Configure the Pi/provider backend and an online Pi-capable local runner. No remote/managed hosts are supported in this starter: on the shared team server, pick the **Mimir** agent instead (`../lab/config.yaml`, see `../deploy/oracle/README.md`). Scouts and Verifiers need `ACADEMIC_DB_URL` and `ACADEMIC_DB_READER_URL` in the repository-root `.env` (see `.env.example`).
 
 ## Direct CLI (optional)
 
