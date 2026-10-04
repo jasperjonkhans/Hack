@@ -5,32 +5,32 @@ The tools use the standard library plus Omnigent's tool decorator.
 ## Layout
 
 ```
-lab/
-  lib/                       provider modules + search_support.py (shared code)
-  agents/
-    scout/tools/python/      literature_search.py: re-exports the Scout's tools
-    verifier/tools/python/   source_lookup.py: re-exports the Verifier's tools
+tools/literature/            literature-tools package: provider modules + search_support.py
+lab/agents/
+  scout/                     config.yaml + tools/python/<tool>.py, one file per tool
+  verifier/                  config.yaml + tools/python/<tool>.py
 ```
 
 Omnigent gives each agent only the tools in its own `tools/python/` folder,
-and every file there must define at least one `@tool`. The implementations
-therefore live once in `lab/lib/`, and each agent's file re-exports the subset
-it needs with `search_support.export`. To give an agent another tool, add one
-`export` line to its file. `lab/lib/` must stay inside the bundle root, because
-Omnigent ships the whole bundle and the agent files find it relative to
-themselves.
+and only dispatches a tool whose function name matches its file name
+(`openalex_search.py` defines `openalex_search`). The implementations therefore
+live once in the `literature-tools` workspace package, installed into the
+project venv by `uv sync`, and each agent has a three-line file per tool that
+re-exports it with `search_support.export`. To give an agent another tool, copy
+one of those files and rename it. Because the code is imported from the venv, an agent
+folder works when run on its own (`omnigent run lab/agents/scout`), as a
+sub-agent, or on the deployed server.
 
 | Agent | Tools |
 |---|---|
-| Scout | `openalex_search`, `openalex_get_paper`, `arxiv_search`, `arxiv_get_paper`, `europepmc_search`, `europepmc_get_paper`, `crossref_search`, `zbmath_search`, `zbmath_get_paper`, `loogle_search` |
+| Scout | `openalex_search`, `openalex_get_paper`, `arxiv_search`, `arxiv_get_paper`, `europepmc_search`, `europepmc_get_paper`, `crossref_search`, `zbmath_search`, `zbmath_get_paper`, `loogle_search`, `read_full_text` |
 | Verifier | `crossref_get_paper`, `openalex_get_paper`, `arxiv_get_paper`, `europepmc_get_paper`, `zbmath_get_paper`, `unpaywall_find_full_text`, `loogle_search`, `check_quote`, `read_full_text` |
 
 Do not set `sandbox.container_image` for these agents: Omnigent runs container
 tools with networking disabled, which breaks every provider.
 
-`pypdf` is a project dependency, so run Omnigent from the project environment
-(`uv run omnigent …` or `.venv/bin/omnigent`). Elsewhere the PDF step is
-skipped and `attempts` reports `pypdf_not_installed`.
+Run Omnigent from the project environment (`uv run omnigent …` or
+`.venv/bin/omnigent`) so the agents can import `literature-tools` and `pypdf`.
 
 ## Searching and continuing
 
