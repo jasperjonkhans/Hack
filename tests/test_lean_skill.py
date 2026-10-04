@@ -9,6 +9,7 @@ from unittest.mock import Mock
 
 import pytest
 import yaml
+from omnigent.inner.pi_executor import _resolve_pi_skill_args
 from omnigent.spec import load
 from omnigent.tools._runner import _invoke_tool, _serialize_result
 from omnigent.tools.base import ToolContext
@@ -20,7 +21,7 @@ from omnigent_lean import adapter
 from omnigent_lean.tools import LEAN_PROOF_TOOL_SPEC, VerificationResult
 
 ROOT = Path(__file__).resolve().parents[1]
-BUNDLE = ROOT / "demo" / "lean"
+BUNDLE = ROOT / "team" / "agents" / "worker"  # the experiment worker carries the Lean skill
 TOOL_FILE = BUNDLE / "tools" / "python" / "lean_verify_proof.py"
 
 
@@ -49,12 +50,14 @@ def test_native_bundle_discovers_skill_and_tool_without_provisioning(
     config_file = bundle / "config.yaml"
     config = yaml.safe_load(config_file.read_text())
     config["executor"]["config"]["harness"] = harness
+    if harness != "pi":
+        config["executor"]["config"].pop("context_files", None)  # Pi-only option
     config_file.write_text(yaml.safe_dump(config))
     provision = Mock(side_effect=AssertionError("Parsing must not provision Lean"))
     monkeypatch.setattr(adapter, "provision", provision)
     spec = load(bundle)
     assert spec.executor.config["harness"] == harness
-    assert spec.skills_filter == "none"
+    assert spec.skills_filter == ["lean"]
     assert [skill.name for skill in spec.skills] == ["lean"]
     skill = spec.skills[0]
     assert "Use when" in skill.description
@@ -77,10 +80,18 @@ def test_native_bundle_discovers_skill_and_tool_without_provisioning(
     provision.assert_not_called()
 
 
-def test_native_config_preserves_read_only_os_grants():
+def test_pi_loads_the_bundled_skill_and_no_host_skills():
+    # Under Pi, skills: none would load no skills at all, bundled ones included.
+    args = _resolve_pi_skill_args(load(BUNDLE).skills_filter, BUNDLE)
+    assert args == ["--no-skills", "--skill", str(BUNDLE / "skills" / "lean")]
+
+
+def test_worker_writes_only_inside_its_task_directory():
+    # The controller points cwd at the task's artifact directory (team/runtime.py).
     config = yaml.safe_load((BUNDLE / "config.yaml").read_text())
     assert config["os_env"]["sandbox"]["type"] == "auto"
-    assert config["os_env"]["sandbox"]["write_paths"] == []
+    assert config["os_env"]["cwd"] == "."
+    assert config["os_env"]["sandbox"]["write_paths"] == ["."]
 
 
 @pytest.mark.parametrize("status", ["verified", "rejected", "timeout", "error"])

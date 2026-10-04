@@ -322,6 +322,9 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
                 self.assertNotEqual(spec.os_env.sandbox.type, "none")
             else:
                 self.assertIsNone(spec.os_env)
+            # Only the worker's bundled Lean skill; never skills installed on the runner's machine.
+            self.assertEqual(spec.skills_filter, ["lean"] if role == "worker" else "none")
+            self.assertEqual([skill.name for skill in spec.skills], ["lean"] if role == "worker" else [])
             if role in ("scout", "verifier"):  # their literature tools and database server travel with them
                 with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
                     self.assertTrue(any(n.startswith("tools/python/") for n in archive.getnames()))

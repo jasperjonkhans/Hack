@@ -1,6 +1,6 @@
 # Lean skill for the Omnigent setup
 
-The canonical skill is [`demo/lean/skills/lean/SKILL.md`](../demo/lean/skills/lean/SKILL.md).
+The canonical skill is [`team/agents/worker/skills/lean/SKILL.md`](../team/agents/worker/skills/lean/SKILL.md), carried by the research team's experiment worker.
 It provides an incremental proof workflow, library-search guidance, statement-fidelity
 review, strict-verifier instructions, bounded retries, and explicit completion evidence.
 References travel with the skill; it has no dependency on slash commands, plugin
@@ -26,15 +26,19 @@ it would add authentication and a different trust/deployment boundary.
 
 ## Native bundle and tool registration
 
-`demo/lean/config.yaml` uses the same native Omnigent executor and caller-process
-OS environment shape as `demo/team/`. Its `skills/lean/` directory is discovered
-by Omnigent's bundle parser. `skills: none` suppresses ambient host skills, not
-bundled skills; it is not a general security filter, and some harnesses differ
-in how they enforce host skill filtering. Claude SDK is the example default;
-change `executor.config.harness` to a configured supported harness if needed.
-The skill itself is portable, but live tool exposure depends on the harness.
+The experiment worker (`team/agents/worker/config.yaml`) carries the skill in
+`skills/lean/` and the tool in `tools/python/lean_verify_proof.py`. Omnigent's
+bundle parser discovers both, and the research controller (`team/runtime.py`)
+ships a role's `skills/` and `tools/` folders with every task.
 
-The directory bundle registers `lean_verify_proof` through its native
+The top-level `skills:` key filters skills, and harnesses differ. Under Claude
+SDK, bundled skills always load and `skills: none` only blocks host skills.
+Under Pi, which the research team uses, `skills: none` loads no skills at all,
+bundled ones included. So the worker names its bundled skill with
+`skills: [lean]`: Pi then loads only `skills/lean/` and no skills installed on
+the runner's machine. It is not a general security filter.
+
+The worker's bundle registers `lean_verify_proof` through its native
 `tools/python/lean_verify_proof.py` file and the public `omnigent_client.tools.tool`
 decorator. The runtime discovers it and derives the existing strict two-field
 schema (with additional descriptive Pydantic titles). The wrapper calls
@@ -79,8 +83,9 @@ this example is not a hardened hostile-submission service.
    Configuration is captured on first successful provisioning; restart the worker
    to change it. Provisioning/download/build time is outside the query deadline.
 5. Validate offline: `uv run --locked pytest tests/test_lean_skill.py`.
-6. From the root, launch `uv run omnigent run demo/lean`. A live run may incur
-   provider costs; no live provider calls are required for compatibility tests.
+6. The worker runs under the research controller (`team/loop.py`, see
+   `team/README.md`). A live run may incur provider costs; no live provider calls
+   are required for compatibility tests.
 
 The adapter provisions lazily once per Python process. A native local tool call
 starts a new subprocess, so it constructs a new config on each call and reuses
@@ -96,10 +101,11 @@ Environment variables belong to the host: model arguments cannot override them.
 
 ## Add to an existing role/team
 
-Copy the entire `demo/lean/skills/lean/` directory, including references, into
-`skills/lean/` beside the receiving role's `config.yaml`, e.g.
-`demo/team/agents/builder/skills/lean/`. Copy the native wrapper into that role's
-`tools/python/lean_verify_proof.py` and tell it to use the skill for Lean work. Ensure
+Copy the entire `team/agents/worker/skills/lean/` directory, including references,
+into `skills/lean/` beside the receiving role's `config.yaml`, e.g.
+`lab/agents/verifier/skills/lean/`. Copy the native wrapper into that role's
+`tools/python/lean_verify_proof.py` and tell it to use the skill for Lean work.
+Under Pi, also add `lean` to the role's `skills:` list (see above). Ensure
 the installed `omnigent_lean` package and host environment are available in the
 actual runner, not only the launching shell; restart an already-running host when
 changing its environment. Do not copy `os_env`/write grants or the whole agent
