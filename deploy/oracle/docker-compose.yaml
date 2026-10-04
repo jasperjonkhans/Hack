@@ -36,10 +36,11 @@ services:
       OMNIGENT_ACCOUNTS_COOKIE_SECRET: ${OMNIGENT_ACCOUNTS_COOKIE_SECRET:?set OMNIGENT_ACCOUNTS_COOKIE_SECRET in .env}
       OMNIGENT_ACCOUNTS_AUTO_OPEN: "0"
       OMNIGENT_FEATURES: ${OMNIGENT_FEATURES:-}
-      OMNIGENT_BUILTIN_AGENT_DIRS: /agents/hack-team
+      OMNIGENT_BUILTIN_AGENT_DIRS: /agents/scout:/agents/verifier
     volumes:
       - artifact-data:/data
-      - ../../demo/team:/agents/hack-team:ro
+      - ../../lab/agents/scout:/agents/scout:ro
+      - ../../lab/agents/verifier:/agents/verifier:ro
     ports:
       - "127.0.0.1:8000:8000"
 
