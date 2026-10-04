@@ -36,13 +36,15 @@ services:
       OMNIGENT_ACCOUNTS_COOKIE_SECRET: ${OMNIGENT_ACCOUNTS_COOKIE_SECRET:?set OMNIGENT_ACCOUNTS_COOKIE_SECRET in .env}
       OMNIGENT_ACCOUNTS_AUTO_OPEN: "0"
       OMNIGENT_FEATURES: ${OMNIGENT_FEATURES:-}
-      # Built-in agents, ':'-separated; each is named after its mount directory.
-      OMNIGENT_BUILTIN_AGENT_DIRS: /agents/hack-team:/agents/research-team
+      # The only agent in the picker: Mimir, the research team in lab/ (named after its mount).
+      OMNIGENT_BUILTIN_AGENT_DIRS: /agents/Mimir
+      # Picker lists only mounted agents; Omnigent's packaged agents aren't seeded.
+      PYTHONPATH: /opt/omnigent-overrides
     volumes:
       - artifact-data:/data
-      - ../../demo/team:/agents/hack-team:ro
       # Research Lead (lab/config.yaml) with its Scout and Verifier sub-agents.
-      - ../../lab:/agents/research-team:ro
+      - ../../lab:/agents/Mimir:ro
+      - ./omnigent-overrides:/opt/omnigent-overrides:ro
     ports:
       - "127.0.0.1:8000:8000"
 
