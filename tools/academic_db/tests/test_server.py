@@ -11,7 +11,8 @@ from mcp.client.stdio import stdio_client
 
 EXPECTED_TOOLS = {
     "find_work", "search_works", "get_work", "top_cited", "works_by_author", "review_queue", "run_sql",
-    "import_work", "save_work", "add_claim", "assess_claim", "get_claim", "list_claims",
+    "import_work", "import_works", "save_work", "add_claim", "assess_claim", "get_claim", "list_claims",
+    "citing_statements", "search_passages",
 }
 
 
@@ -48,6 +49,7 @@ def test_lists_every_tool_with_annotations():
     assert by_name["run_sql"].annotations.readOnlyHint is True
     assert by_name["assess_claim"].annotations.readOnlyHint is False
     assert by_name["assess_claim"].inputSchema["properties"]["confidence"]["maximum"] == 1
+    assert by_name["import_works"].inputSchema["properties"]["identifiers"]["maxItems"] == 50
 
 
 @pytest.mark.db

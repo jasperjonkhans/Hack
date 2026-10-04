@@ -78,6 +78,7 @@ work_authors       claim_evidence ──*..1──► claim_assessments ──*.
 | `is_oa` | boolean | Open access according to this provider |
 | `oa_status` | text | `diamond`, `gold`, `green`, `hybrid`, `bronze`, `closed` |
 | `oa_url` | text | Best free URL (PDF or landing page) |
+| `abstract` | text | This provider's abstract (OpenAlex's inverted index rebuilt to text, arXiv summary, Semantic Scholar abstract) |
 | `raw` | jsonb | Full provider payload. arXiv: `{"entry_xml": "<entry>…</entry>"}` |
 | `fetched_at` | timestamptz | When this provider was last queried |
 
@@ -106,6 +107,8 @@ Every `works` column, plus `primary_provider`, `source_id`, `cited_by_count`, `i
 | `text` | text | The statement. Identical text (ignoring case and surrounding whitespace) is stored once |
 | `created_by` | text | Agent that recorded it (`lead`, `scout`, …) |
 | `created_at` | timestamptz | |
+| `source_work_id` | bigint → `works.id` | Paper the claim was taken from; the Verifier checks the claim is faithful to it |
+| `source_quote` | text | The passage in that paper that states the claim |
 
 ### `claim_assessments`: one verdict on a claim, append-only
 
@@ -130,14 +133,18 @@ Every `works` column, plus `primary_provider`, `source_id`, `cited_by_count`, `i
 
 ### `claim_status` (view)
 
-One row per claim with its newest assessment: `id`, `text`, `created_by`, `created_at`, `assessment_id`, `confidence`, `verdict`, `rationale`, `assessed_by`, `assessed_at`, `assessment_count`. `verdict IS NULL` means it hasn't been assessed yet.
+One row per claim with its newest assessment: `id`, `text`, `created_by`, `created_at`, `assessment_id`, `confidence`, `verdict`, `rationale`, `assessed_by`, `assessed_at`, `assessment_count`, `source_work_id`, `source_quote`. `verdict IS NULL` means it hasn't been assessed yet.
+
+### `work_quality` (view)
+
+What code can establish about a paper without reading it, so Verifiers don't spend effort on it: `work_id`, `providers` (in priority order), `is_retracted` (from OpenAlex; NULL = unknown), `preprint_only`, `year_spread` (largest year disagreement between providers), `title_matched` (linked only by title).
 
 ### Functions
 
 | Function | Use |
 |---|---|
 | `refresh_work(work_id)` | Recompute a work's canonical columns from its records. Call it after any insert, update or move of `work_records`. Raises if the work has no records |
-| `merge_works(target_id, source_ids bigint[])` | Move all records and claim evidence of the source works into the target, delete the sources, then refresh the target |
+| `merge_works(target_id, source_ids bigint[])` | Move all records, claim evidence and claim sources of the source works into the target, delete the sources, then refresh the target |
 
 ## Identifier formats
 
@@ -307,13 +314,14 @@ WHERE w.title_norm = lower(regexp_replace($title, '[^[:alnum:]]+', '', 'g'))
 
 ```sql
 INSERT INTO work_records (work_id, provider, provider_work_id, matched_by, doi, arxiv_id, mag_id, title,
-                          publication_year, type, source_id, cited_by_count, is_oa, oa_status, oa_url, raw, fetched_at)
+                          publication_year, type, source_id, cited_by_count, is_oa, oa_status, oa_url, abstract,
+                          raw, fetched_at)
 VALUES (...)
 ON CONFLICT (provider, provider_work_id) DO UPDATE SET
   doi = EXCLUDED.doi, arxiv_id = EXCLUDED.arxiv_id, mag_id = EXCLUDED.mag_id, title = EXCLUDED.title,
   publication_year = EXCLUDED.publication_year, type = EXCLUDED.type, source_id = EXCLUDED.source_id,
   cited_by_count = EXCLUDED.cited_by_count, is_oa = EXCLUDED.is_oa, oa_status = EXCLUDED.oa_status,
-  oa_url = EXCLUDED.oa_url, raw = EXCLUDED.raw, fetched_at = now()
+  oa_url = EXCLUDED.oa_url, abstract = EXCLUDED.abstract, raw = EXCLUDED.raw, fetched_at = now()
   -- work_id and matched_by deliberately not updated
 RETURNING id;
 
@@ -341,22 +349,24 @@ The same records always produce the same result, whatever order they were loaded
 - **`cited_by_count` is `NULL` for arXiv-only works**, not 0. Sort with `NULLS LAST`.
 - **Providers disagree on OA.** Semantic Scholar often says `is_oa=false` for papers that are on arXiv. `work_overview` uses the top provider's answer.
 - **Title matching is exact after normalization.** A subtitle present in only one provider means no match and possibly a duplicate work.
-- **No abstracts, author names per work, journal names, topics or citation links yet.** They exist in `raw` for some providers, but aren't modelled as columns.
+- **No journal names, topics or citation links as columns yet.** They exist in `raw` for some providers. Abstracts are stored per provider; `get_work` prefers arXiv's, then Semantic Scholar's, then OpenAlex's, because OpenAlex's rebuilt abstracts are sometimes front matter such as author lists.
+- **Imports reject provider records that describe another paper.** Each import is anchored on the requested identifier; a provider record whose title doesn't match is reported as `mismatch` and not saved.
 - **A verdict must cite papers that are already stored.** Import them first. `supported` needs at least one `supports` paper and `contradicted` at least one `contradicts` paper; `inconclusive` may cite none.
 - **Re-assessing a claim adds a verdict; it never edits one.** The newest is current, and `get_claim` shows the whole history.
 
 ## Agent tools
 
-The `academic-db-mcp` server ([README](../README.md)) exposes these tools. Each agent allow-lists its own subset in its Omnigent YAML.
+The `academic-db-mcp` server exposes these tools; see the [README](../README.md) for what each one does, the YAML for each agent, and the recommended Scout/Verifier workflow.
 
-| Tool | Access | Lead | Scout | Verifier |
-|---|---|:-:|:-:|:-:|
-| `find_work`, `search_works`, `get_work` | read | ✓ | ✓ | ✓ |
-| `top_cited`, `works_by_author` | read | | ✓ | ✓ |
-| `review_queue`, `run_sql` | read | | | ✓ |
-| `list_claims`, `get_claim` | read | ✓ | ✓ | ✓ |
-| `import_work`, `save_work` | write | | ✓ | |
-| `add_claim` | write | ✓ | ✓ | |
-| `assess_claim` | write | | | ✓ |
+| Tool | Lead | Scout | Verifier |
+|---|:-:|:-:|:-:|
+| `find_work`, `search_works`, `get_work` | ✓ | ✓ | ✓ |
+| `top_cited`, `works_by_author` | | ✓ | ✓ |
+| `list_claims`, `get_claim` | ✓ | ✓ | ✓ |
+| `search_passages` | | ✓ | ✓ |
+| `citing_statements`, `review_queue`, `run_sql` | | | ✓ |
+| `import_works`, `import_work`, `save_work` | | ✓ | `import_works` |
+| `add_claim` | ✓ | ✓ | |
+| `assess_claim` | | | ✓ |
 
 Read tools connect as `academic_reader`, so they can't change data even through `run_sql`.

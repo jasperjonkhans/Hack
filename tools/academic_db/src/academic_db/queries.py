@@ -10,17 +10,24 @@ from .identifiers import Identifier
 
 MAX_LIMIT = 100
 
+# work_overview plus the quality flags every list shows, so agents can skip retracted papers early.
+WORKS = (
+    "(SELECT o.*, q.is_retracted, q.preprint_only FROM work_overview o "
+    "LEFT JOIN work_quality q ON q.work_id = o.id) AS w"
+)
 OVERVIEW_COLUMNS = (
-    "id AS work_id, title, publication_year, type, doi, arxiv_id, mag_id, "
-    "primary_provider, cited_by_count, is_oa, oa_status, oa_url, source_id"
+    "w.id AS work_id, w.title, w.publication_year, w.type, w.doi, w.arxiv_id, w.mag_id, "
+    "w.primary_provider, w.cited_by_count, w.is_oa, w.oa_status, w.oa_url, w.source_id, "
+    "w.is_retracted, w.preprint_only"
 )
 
 _FIND_BY = {
-    "doi": "SELECT work_id FROM work_records WHERE doi = %s",
-    "arxiv": "SELECT work_id FROM work_records WHERE arxiv_id = %s",
-    "openalex": "SELECT work_id FROM work_records WHERE provider = 'openalex' AND provider_work_id = %s",
+    "doi": "SELECT work_id FROM work_records WHERE doi = %(v)s",
+    "arxiv": "SELECT work_id FROM work_records WHERE arxiv_id = %(v)s",
+    "openalex": "SELECT work_id FROM work_records WHERE provider = 'openalex' AND provider_work_id = %(v)s",
     "semantic_scholar": (
-        "SELECT work_id FROM work_records WHERE provider = 'semantic_scholar' AND provider_work_id = %s"
+        "SELECT work_id FROM work_records WHERE provider = 'semantic_scholar' "
+        "AND (provider_work_id = %(v)s OR 'CorpusId:' || (raw -> 'externalIds' ->> 'CorpusId') = %(v)s)"
     ),
 }
 
@@ -35,13 +42,13 @@ def _like(word: str) -> str:
 
 
 def overview(conn: psycopg.Connection, work_id: int) -> dict[str, Any] | None:
-    return conn.execute(f"SELECT {OVERVIEW_COLUMNS} FROM work_overview WHERE id = %s", (work_id,)).fetchone()
+    return conn.execute(f"SELECT {OVERVIEW_COLUMNS} FROM {WORKS} WHERE w.id = %s", (work_id,)).fetchone()
 
 
 def find_work(conn: psycopg.Connection, identifier: Identifier) -> dict[str, Any] | None:
     return conn.execute(
-        f"SELECT {OVERVIEW_COLUMNS} FROM work_overview WHERE id IN ({_FIND_BY[identifier.kind]})",
-        (identifier.value,),
+        f"SELECT {OVERVIEW_COLUMNS} FROM {WORKS} WHERE w.id IN ({_FIND_BY[identifier.kind]})",
+        {"v": identifier.value},
     ).fetchone()
 
 
@@ -66,8 +73,8 @@ def search_works(conn: psycopg.Connection, query: str, *, year_from: int | None 
         conditions.append("is_oa")
     params.append(_limit(limit))
     return conn.execute(
-        f"SELECT {OVERVIEW_COLUMNS} FROM work_overview WHERE {' AND '.join(conditions)} "
-        "ORDER BY cited_by_count DESC NULLS LAST, publication_year DESC NULLS LAST, id LIMIT %s",
+        f"SELECT {OVERVIEW_COLUMNS} FROM {WORKS} WHERE {' AND '.join(conditions)} "
+        "ORDER BY cited_by_count DESC NULLS LAST, publication_year DESC NULLS LAST, w.id LIMIT %s",
         params,
     ).fetchall()
 
@@ -88,6 +95,28 @@ def get_work(conn: psycopg.Connection, work_id: int) -> dict[str, Any] | None:
         WHERE r.work_id = %s
         ORDER BY p.priority, r.fetched_at DESC
         """,
+        (work_id,),
+    ).fetchall()
+    # Abstracts follow their own preference: arXiv is the authors' text, while OpenAlex's rebuilt abstracts are
+    # sometimes front matter (e.g. author lists) rather than the abstract.
+    abstract = conn.execute(
+        """
+        SELECT abstract, provider FROM work_records
+        WHERE work_id = %s AND abstract IS NOT NULL
+        ORDER BY array_position(ARRAY['arxiv', 'semantic_scholar', 'openalex'], provider), fetched_at DESC
+        LIMIT 1
+        """,
+        (work_id,),
+    ).fetchone()
+    work["abstract"] = abstract["abstract"] if abstract else None
+    work["abstract_source"] = abstract["provider"] if abstract else None
+    work["quality"] = conn.execute(
+        "SELECT providers, is_retracted, preprint_only, year_spread, title_matched FROM work_quality "
+        "WHERE work_id = %s",
+        (work_id,),
+    ).fetchone()
+    work["claims_from_this_paper"] = conn.execute(
+        "SELECT id AS claim_id, text, verdict, confidence FROM claim_status WHERE source_work_id = %s ORDER BY id",
         (work_id,),
     ).fetchall()
     work["claims"] = conn.execute(
@@ -116,12 +145,12 @@ def top_cited(conn: psycopg.Connection, *, year: int | None = None, work_type: s
         conditions.append("type = %s")
         params.append(work_type)
     if source_id:
-        conditions.append("id IN (SELECT work_id FROM work_records WHERE source_id = %s)")
+        conditions.append("w.id IN (SELECT work_id FROM work_records WHERE source_id = %s)")
         params.append(source_id)
     params.append(_limit(limit))
     return conn.execute(
-        f"SELECT {OVERVIEW_COLUMNS} FROM work_overview WHERE {' AND '.join(conditions)} "
-        "ORDER BY cited_by_count DESC, id LIMIT %s",
+        f"SELECT {OVERVIEW_COLUMNS} FROM {WORKS} WHERE {' AND '.join(conditions)} "
+        "ORDER BY cited_by_count DESC, w.id LIMIT %s",
         params,
     ).fetchall()
 
@@ -133,9 +162,9 @@ def works_by_author(conn: psycopg.Connection, provider: str, author_id: str,
         SELECT {OVERVIEW_COLUMNS}, a.author_name, a.position AS author_position
         FROM work_authors a
         JOIN work_records r ON r.id = a.work_record_id
-        JOIN work_overview o ON o.id = r.work_id
+        JOIN {WORKS} ON w.id = r.work_id
         WHERE r.provider = %s AND a.author_id = %s
-        ORDER BY o.publication_year DESC NULLS LAST, o.id
+        ORDER BY w.publication_year DESC NULLS LAST, w.id
         LIMIT %s
         """,
         (provider, author_id, _limit(limit)),

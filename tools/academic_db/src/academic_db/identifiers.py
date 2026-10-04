@@ -16,6 +16,7 @@ _ARXIV_ID = re.compile(r"^(?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?/\d{7})$")
 _ARXIV_DOI = re.compile(r"^10\.48550/arxiv\.(.+)$", re.IGNORECASE)
 _OPENALEX_WORK = re.compile(r"^(?:https?://openalex\.org/)?(W\d+)$", re.IGNORECASE)
 _S2_PAPER = re.compile(r"(?:^|/)([0-9a-f]{40})$", re.IGNORECASE)
+_S2_CORPUS = re.compile(r"^corpus_?id:\s*(\d+)$", re.IGNORECASE)
 
 
 def normalize_doi(value: str | None) -> str | None:
@@ -71,7 +72,10 @@ def parse_identifier(text: str) -> Identifier:
         return Identifier("arxiv", arxiv_id)
     if match := _S2_PAPER.search(value):
         return Identifier("semantic_scholar", match.group(1).lower())
+    if match := _S2_CORPUS.match(value):
+        return Identifier("semantic_scholar", f"CorpusId:{match.group(1)}")
     raise ValueError(
         f"Unrecognized identifier {text!r}. Use a DOI (10.1038/nature14539), arXiv ID (1706.03762), "
-        "OpenAlex work ID (W2626778328), Semantic Scholar paper ID (40 hex characters), or a URL to one."
+        "OpenAlex work ID (W2626778328), Semantic Scholar paper ID (40 hex characters) or CorpusId:N, "
+        "or a URL to one."
     )

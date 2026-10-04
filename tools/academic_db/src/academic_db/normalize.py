@@ -60,6 +60,7 @@ class Record:
     is_oa: bool | None = None
     oa_status: str | None = None
     oa_url: str | None = None
+    abstract: str | None = None
     authors: tuple[Author, ...] = field(default_factory=tuple)
 
 
@@ -81,6 +82,14 @@ def _int(value: Any) -> int | None:
         return int(value) if value not in (None, "") else None
     except (TypeError, ValueError):
         return None
+
+
+def _openalex_abstract(inverted_index: dict[str, list[int]] | None) -> str | None:
+    """OpenAlex ships abstracts as {word: [positions]}; rebuild the text."""
+    if not inverted_index:
+        return None
+    positions = sorted((pos, word) for word, places in inverted_index.items() for pos in places)
+    return _text(" ".join(word for _, word in positions))
 
 
 def _require_title(provider: str, work_id: str, title: str | None) -> str:
@@ -127,6 +136,7 @@ def from_openalex(work: dict[str, Any]) -> Record:
         is_oa=open_access.get("is_oa"),
         oa_status=_oa_status(open_access.get("oa_status")),
         oa_url=_text(open_access.get("oa_url")),
+        abstract=_openalex_abstract(work.get("abstract_inverted_index")),
         authors=authors,
     )
 
@@ -167,13 +177,14 @@ def from_semantic_scholar(paper: dict[str, Any]) -> Record:
         is_oa=paper.get("isOpenAccess"),
         oa_status=_oa_status(pdf.get("status")),
         oa_url=_text(pdf.get("url")),
+        abstract=_text(paper.get("abstract")),
         authors=authors,
     )
 
 
-def from_arxiv(entry_xml: str) -> Record:
+def from_arxiv(entry_xml: str | ET.Element) -> Record:
     """Parse one arXiv Atom <entry> (or a feed containing exactly one entry)."""
-    root = ET.fromstring(entry_xml)
+    root = ET.fromstring(entry_xml) if isinstance(entry_xml, str) else entry_xml
     entry = root if root.tag == f"{ATOM}entry" else root.find(f"{ATOM}entry")
     if entry is None:
         raise ValueError("arXiv payload contains no <entry>")
@@ -202,8 +213,20 @@ def from_arxiv(entry_xml: str) -> Record:
         is_oa=True,
         oa_status="green",
         oa_url=_text(pdf_url),
+        abstract=_text(entry.findtext(f"{ATOM}summary")),
         authors=authors,
     )
+
+
+def from_arxiv_feed(feed_xml: str) -> list[Record]:
+    """Every valid entry in an arXiv API feed; error entries and unknown IDs are skipped."""
+    records = []
+    for entry in ET.fromstring(feed_xml).findall(f"{ATOM}entry"):
+        try:
+            records.append(from_arxiv(entry))
+        except ValueError:
+            continue
+    return records
 
 
 def from_payload(provider: str, payload: dict[str, Any] | str) -> Record:

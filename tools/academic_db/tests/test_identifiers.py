@@ -57,6 +57,8 @@ def test_arxiv_id_from_doi():
             "https://www.semanticscholar.org/paper/Attention-is-All-you-Need/204e3073870fae3d05bcbc2f6a8e263d9b72e776",
             Identifier("semantic_scholar", "204e3073870fae3d05bcbc2f6a8e263d9b72e776"),
         ),
+        ("CorpusId:13756489", Identifier("semantic_scholar", "CorpusId:13756489")),
+        ("corpus_id: 13756489", Identifier("semantic_scholar", "CorpusId:13756489")),
     ],
 )
 def test_parse_identifier(raw, expected):

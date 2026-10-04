@@ -6,7 +6,7 @@ import psycopg
 import pytest
 from conftest import RUN, isolated, load_json, load_text
 
-from academic_db import claims, queries
+from academic_db import claims, ingest, queries
 from academic_db.identifiers import Identifier
 from academic_db.ingest import save_record
 from academic_db.normalize import from_arxiv, from_openalex, from_semantic_scholar
@@ -130,3 +130,60 @@ def test_run_sql_is_read_only_and_single_statement():
     with db.reader() as conn:
         result = queries.run_sql(conn, "SELECT generate_series(1, 500) AS n", max_rows=10)
         assert len(result["rows"]) == 10 and result["truncated"]
+
+
+def test_get_work_has_abstract_and_quality(conn):
+    work_id = save_record(conn, OPENALEX).work_id
+    save_record(conn, S2)
+    save_record(conn, ARXIV)
+    work = queries.get_work(conn, work_id)
+    assert work["abstract"].startswith("The dominant sequence transduction models")
+    assert work["abstract_source"] == "arxiv"  # authors' own text wins for abstracts
+    assert work["quality"]["providers"] == ["openalex", "semantic_scholar", "arxiv"]
+    assert work["quality"]["year_spread"] == OPENALEX.publication_year - 2017  # OpenAlex's repost year
+    assert work["quality"]["is_retracted"] is False and work["is_retracted"] is False
+    assert work["quality"]["preprint_only"] is False  # Semantic Scholar says conference paper
+
+
+def test_claim_provenance_and_near_duplicates(conn):
+    work_id = save_record(conn, ARXIV).work_id
+    first = claims.add_claim(conn, f"Self-attention alone can reach state-of-the-art translation quality {RUN}.",
+                             "scout", source_work_id=work_id, source_quote="We propose the Transformer...")
+    assert first["created"]
+    near = claims.add_claim(conn, f"Self-attention alone reaches state-of-the-art translation quality {RUN}.", "scout")
+    assert near["claim_id"] is None and near["similar_claims"][0]["claim_id"] == first["claim_id"]
+    forced = claims.add_claim(conn, f"Self-attention alone reaches state-of-the-art translation quality {RUN}.",
+                              "scout", allow_similar=True)
+    assert forced["created"]
+
+    detail = claims.get_claim(conn, first["claim_id"])
+    assert detail["source"]["work_id"] == work_id and detail["source_quote"] == "We propose the Transformer..."
+    assert [c["claim_id"] for c in queries.get_work(conn, work_id)["claims_from_this_paper"]] == [first["claim_id"]]
+    with pytest.raises(ValueError, match="not in the database"):
+        claims.add_claim(conn, f"Unrelated claim with a missing source {RUN}.", "scout", source_work_id=-1)
+
+
+def test_merge_moves_claim_sources(conn):
+    oa = save_record(conn, dataclasses.replace(OPENALEX, arxiv_id=None)).work_id
+    ax = save_record(conn, ARXIV).work_id
+    claim = claims.add_claim(conn, f"A claim taken from the arXiv record {RUN}.", "scout",
+                             source_work_id=max(oa, ax))["claim_id"]
+    save_record(conn, S2)  # merges oa and ax
+    assert claims.get_claim(conn, claim)["source_work_id"] == min(oa, ax)
+
+
+def test_save_fetched_resolves_work_ids_after_merges(conn):
+    papers = [
+        ingest.PaperFetch(Identifier("openalex", OPENALEX.provider_work_id), {},
+                          records={"openalex": dataclasses.replace(OPENALEX, arxiv_id=None)}),
+        ingest.PaperFetch(Identifier("arxiv", ARXIV.arxiv_id), {}, records={"arxiv": ARXIV}),
+        ingest.PaperFetch(Identifier("semantic_scholar", S2.provider_work_id), {}, records={"semantic_scholar": S2}),
+        ingest.PaperFetch(Identifier("doi", f"10.99999/{RUN}/missing"), {}, status={"openalex": "not_found"}),
+    ]
+    for paper in papers:
+        for provider in ("openalex", "semantic_scholar", "arxiv"):
+            paper.status.setdefault(provider, "found" if provider in paper.records else "skipped")
+    results = ingest.save_fetched(conn, papers)
+    # The third save merges the first two works, so all three resolve to the surviving work.
+    assert len({r.work_id for r in results[:3]}) == 1 and results[3].work_id is None
+    assert results[0].providers["openalex"] == "saved" and results[3].providers["openalex"] == "not_found"

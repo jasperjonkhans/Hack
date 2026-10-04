@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import asdict, dataclass
+import re
+from collections.abc import Callable, Iterable
+from dataclasses import asdict, dataclass, field
+from types import ModuleType
 from typing import Any
 
 import httpx
@@ -12,7 +14,7 @@ from psycopg.types.json import Jsonb
 
 from . import providers
 from .identifiers import Identifier
-from .normalize import PROVIDERS, Record, from_arxiv, from_openalex, from_semantic_scholar
+from .normalize import PROVIDERS, Record, from_arxiv_feed, from_openalex, from_semantic_scholar
 
 # Serializes all saves so concurrent agents cannot create duplicate works.
 INGEST_LOCK = "academic_db.ingest"
@@ -31,15 +33,16 @@ LIMIT 2
 
 _UPSERT = """
 INSERT INTO work_records (work_id, provider, provider_work_id, matched_by, doi, arxiv_id, mag_id, title,
-                          publication_year, type, source_id, cited_by_count, is_oa, oa_status, oa_url, raw)
+                          publication_year, type, source_id, cited_by_count, is_oa, oa_status, oa_url,
+                          abstract, raw)
 VALUES (%(work_id)s, %(provider)s, %(provider_work_id)s, %(matched_by)s, %(doi)s, %(arxiv_id)s, %(mag_id)s,
         %(title)s, %(publication_year)s, %(type)s, %(source_id)s, %(cited_by_count)s, %(is_oa)s,
-        %(oa_status)s, %(oa_url)s, %(raw)s)
+        %(oa_status)s, %(oa_url)s, %(abstract)s, %(raw)s)
 ON CONFLICT (provider, provider_work_id) DO UPDATE SET
   doi = EXCLUDED.doi, arxiv_id = EXCLUDED.arxiv_id, mag_id = EXCLUDED.mag_id, title = EXCLUDED.title,
   publication_year = EXCLUDED.publication_year, type = EXCLUDED.type, source_id = EXCLUDED.source_id,
   cited_by_count = EXCLUDED.cited_by_count, is_oa = EXCLUDED.is_oa, oa_status = EXCLUDED.oa_status,
-  oa_url = EXCLUDED.oa_url, raw = EXCLUDED.raw, fetched_at = now()
+  oa_url = EXCLUDED.oa_url, abstract = EXCLUDED.abstract, raw = EXCLUDED.raw, fetched_at = now()
   -- work_id and matched_by are kept on refresh
 RETURNING id
 """
@@ -126,88 +129,206 @@ def _match_by_title(conn: psycopg.Connection, rec: Record) -> int | None:
     return rows[0]["id"] if len(rows) == 1 else None
 
 
-@dataclass
-class FetchOutcome:
-    provider: str
-    status: str  # found | not_found | rate_limited | error | skipped
-    detail: str | None = None
-    record: Record | None = None
+# Which provider's answer to the requested identifier defines the paper, most reliable first.
+ANCHORS = {
+    "arxiv": ("arxiv", "semantic_scholar", "openalex"),
+    "doi": ("openalex", "semantic_scholar"),
+    "openalex": ("openalex",),
+    "semantic_scholar": ("semantic_scholar",),
+}
+_WORD = re.compile(r"[a-z0-9]+")
 
 
-def _lookups(provider: str, known: dict[str, str]) -> list[dict[str, str]]:
-    """Ways to look a paper up at a provider, given the IDs known so far (most specific first)."""
-    options = {
-        "openalex": (("openalex_id", "openalex"), ("doi", "doi"), ("arxiv_id", "arxiv")),
-        "semantic_scholar": (("paper_id", "semantic_scholar"), ("doi", "doi"), ("arxiv_id", "arxiv")),
-        "arxiv": (("arxiv_id", "arxiv"),),
-    }[provider]
-    return [{arg: known[kind]} for arg, kind in options if known.get(kind)]
+def same_title(a: str, b: str) -> bool:
+    """Titles describe the same paper: 80% of the shorter title's words appear in the other.
 
-
-def _fetch(provider: str, lookup: dict[str, str]) -> Record:
-    if provider == "openalex":
-        return from_openalex(providers.openalex_work(**lookup))
-    if provider == "semantic_scholar":
-        return from_semantic_scholar(providers.semantic_scholar_paper(**lookup))
-    return from_arxiv(providers.arxiv_entry(lookup["arxiv_id"]))
-
-
-def fetch_all(identifier: Identifier,
-              fetch: Callable[[str, dict[str, str]], Record] = _fetch) -> list[FetchOutcome]:
-    """Fetch a paper from every provider, using IDs each answer reveals to query the others.
-
-    For example an arXiv ID finds the OpenAlex work (via its arXiv location) and the Semantic
-    Scholar paper; a DOI from one provider is tried at the next.
+    Tolerates case, punctuation and an extra subtitle; rejects provider records whose metadata
+    belongs to another paper (OpenAlex sometimes merges unrelated records).
     """
-    known: dict[str, str] = {identifier.kind: identifier.value}
-    outcomes = {p: FetchOutcome(p, "skipped", "no identifier this provider can look up") for p in PROVIDERS}
-    tried: dict[str, set[tuple[str, str]]] = {p: set() for p in PROVIDERS}
-    # A Semantic Scholar ID is only usable at Semantic Scholar, so ask it first to learn DOI/arXiv.
-    order = list(PROVIDERS)
-    if identifier.kind == "semantic_scholar":
-        order = ["semantic_scholar", "openalex", "arxiv"]
+    words_a, words_b = set(_WORD.findall(a.lower())), set(_WORD.findall(b.lower()))
+    if not words_a or not words_b:
+        return False
+    return len(words_a & words_b) / min(len(words_a), len(words_b)) >= 0.8
 
-    for _ in range(2):  # second round retries with IDs discovered in the first
-        progress = False
-        for provider in order:
-            if outcomes[provider].status in ("found", "rate_limited", "error"):
+
+@dataclass
+class PaperFetch:
+    """One requested paper: the IDs known for it so far and what each provider returned."""
+
+    identifier: Identifier
+    known: dict[str, str]
+    records: dict[str, Record] = field(default_factory=dict)  # accepted records, saved later
+    status: dict[str, str] = field(default_factory=dict)  # found | not_found | mismatch | rate_limited | error | skipped
+    detail: dict[str, str] = field(default_factory=dict)
+    anchor: Record | None = None
+
+    def keys_for(self, provider: str) -> list[tuple[str, str]]:
+        """IDs this provider can look the paper up by, most specific first."""
+        usable = {
+            "openalex": ("openalex", "doi", "arxiv"),
+            "semantic_scholar": ("semantic_scholar", "doi", "arxiv"),
+            "arxiv": ("arxiv",),
+        }[provider]
+        return [(kind, self.known[kind]) for kind in usable if self.known.get(kind)]
+
+    def matches(self, rec: Record) -> bool:
+        return (
+            (rec.provider in ("openalex", "semantic_scholar") and self.known.get(rec.provider) == rec.provider_work_id)
+            or (rec.doi is not None and self.known.get("doi") == rec.doi)
+            or (rec.arxiv_id is not None and self.known.get("arxiv") == rec.arxiv_id)
+        )
+
+    def accept(self, provider: str, candidates: list[Record]) -> bool:
+        """Keep the candidate that describes the anchored paper; returns whether one was kept."""
+        if not candidates:
+            self.status[provider] = "not_found"
+            return False
+        if self.anchor is None:
+            self.status[provider] = "found"  # provisional until an anchor is chosen
+            self.records[provider] = candidates[0]
+            return True
+        match = next((r for r in candidates if same_title(r.title, self.anchor.title)), None)
+        if match is None:
+            self.status[provider] = "mismatch"
+            self.detail[provider] = f"returned a different paper: {candidates[0].title[:120]!r}"
+            return False
+        self.status[provider] = "found"
+        self.records[provider] = match
+        for kind, value in (("doi", match.doi), ("arxiv", match.arxiv_id)):
+            if value and kind not in self.known:
+                self.known[kind] = value
+        return True
+
+    def choose_anchor(self) -> None:
+        """After the first round: the most reliable answer to the requested ID defines the paper."""
+        found = dict(self.records)
+        self.records.clear()
+        anchor_provider = next((p for p in ANCHORS[self.identifier.kind] if p in found), None)
+        if anchor_provider is None:
+            return
+        self.anchor = found[anchor_provider]
+        for provider, rec in found.items():
+            self.accept(provider, [rec])
+
+
+def _normalize_all(normalize: Callable[[Any], Record], payloads: Iterable[Any]) -> list[Record]:
+    records = []
+    for payload in payloads:
+        try:
+            records.append(normalize(payload))
+        except ValueError:  # e.g. a record without a title
+            continue
+    return records
+
+
+def _fetch_batch(provider: str, wanted: dict[str, set[str]],
+                 client: ModuleType) -> tuple[list[Record], dict[tuple[str, str], Record]]:
+    """Records from one batched request, plus (kind, value) -> record where the provider answers per key."""
+    if provider == "openalex":
+        works = client.openalex_works(openalex_ids=sorted(wanted["openalex"]), dois=sorted(wanted["doi"]),
+                                      arxiv_ids=sorted(wanted["arxiv"]))
+        return _normalize_all(from_openalex, works), {}
+    if provider == "semantic_scholar":
+        # The batch endpoint answers in request order, so each answer maps back to the key that asked for it.
+        asked = ([("semantic_scholar", v) for v in sorted(wanted["semantic_scholar"])]
+                 + [("doi", v) for v in sorted(wanted["doi"])] + [("arxiv", v) for v in sorted(wanted["arxiv"])])
+        prefix = {"semantic_scholar": "", "doi": "DOI:", "arxiv": "ARXIV:"}
+        answers = client.semantic_scholar_papers([prefix[kind] + value for kind, value in asked])
+        by_key = {}
+        for key, payload in zip(asked, answers, strict=True):
+            records = _normalize_all(from_semantic_scholar, [payload] if payload else [])
+            if records:
+                by_key[key] = records[0]
+        return list(by_key.values()), by_key
+    return [rec for feed in client.arxiv_feeds(sorted(wanted["arxiv"])) for rec in from_arxiv_feed(feed)], {}
+
+
+def _run_round(papers: list[PaperFetch], tried: dict[str, set[tuple[str, str]]], client: ModuleType,
+               *, only_requested: bool) -> bool:
+    """One batched request per provider; returns whether any record was accepted."""
+    progress = False
+    for provider in PROVIDERS:
+        wanted: dict[str, set[str]] = {"openalex": set(), "semantic_scholar": set(), "doi": set(), "arxiv": set()}
+        asking: list[tuple[PaperFetch, list[tuple[str, str]]]] = []
+        for paper in papers:
+            if provider in paper.records or paper.status.get(provider) in ("rate_limited", "error"):
                 continue
-            for lookup in _lookups(provider, known):
-                key = next(iter(lookup.items()))
-                if key in tried[provider]:
-                    continue
-                tried[provider].add(key)
-                try:
-                    rec = fetch(provider, lookup)
-                except providers.NotFound:
-                    outcomes[provider] = FetchOutcome(provider, "not_found", f"not found by {key[0]}={key[1]}")
-                    continue
-                except providers.RateLimited:
-                    outcomes[provider] = FetchOutcome(
-                        provider, "rate_limited", "rate limited; set S2_API_KEY for Semantic Scholar"
-                    )
-                    break
-                except (httpx.HTTPError, ValueError) as exc:
-                    outcomes[provider] = FetchOutcome(provider, "error", str(exc))
-                    break
-                outcomes[provider] = FetchOutcome(provider, "found", record=rec)
-                for kind, value in (("doi", rec.doi), ("arxiv", rec.arxiv_id)):
-                    if value and kind not in known:
-                        known[kind] = value
-                progress = True
-                break
-        if not progress:
+            keys = paper.keys_for(provider)
+            if only_requested:
+                keys = [k for k in keys if k == (paper.identifier.kind, paper.identifier.value)]
+            new_keys = [key for key in keys if key not in tried[provider]]
+            if new_keys:
+                asking.append((paper, new_keys))
+                for kind, value in new_keys:
+                    wanted[kind].add(value)
+                    tried[provider].add((kind, value))
+        if not asking:
+            continue
+        try:
+            found, by_key = _fetch_batch(provider, wanted, client)
+        except (providers.RateLimited, httpx.HTTPError, ValueError) as exc:
+            status = "rate_limited" if isinstance(exc, providers.RateLimited) else "error"
+            for paper, _ in asking:
+                paper.status[provider] = status
+                paper.detail[provider] = f"{type(exc).__name__}: {exc}"[:200]
+            continue
+        for paper, keys in asking:
+            candidates = [by_key[key] for key in keys if key in by_key] or [r for r in found if paper.matches(r)]
+            progress |= paper.accept(provider, candidates)
+    return progress
+
+
+def fetch_many(identifiers: list[Identifier], client: ModuleType = providers) -> list[PaperFetch]:
+    """Fetch papers from every provider with one batched request per provider per round.
+
+    Round one asks every provider for the requested identifier only, and the most reliable answer
+    becomes the paper's anchor. Later rounds use IDs revealed by accepted records (e.g. a DOI from
+    Semantic Scholar finds the OpenAlex work), and accept only records whose title matches the anchor.
+    """
+    papers = [PaperFetch(ident, {ident.kind: ident.value}) for ident in identifiers]
+    tried: dict[str, set[tuple[str, str]]] = {p: set() for p in PROVIDERS}
+
+    _run_round(papers, tried, client, only_requested=True)
+    for paper in papers:
+        paper.choose_anchor()
+    for _ in range(2):
+        if not _run_round([p for p in papers if p.anchor], tried, client, only_requested=False):
             break
-    return [outcomes[p] for p in PROVIDERS]
+
+    for paper in papers:
+        for provider in PROVIDERS:
+            paper.status.setdefault(provider, "skipped")
+    return papers
 
 
-def summarize(outcome: FetchOutcome, saved: SaveResult | None) -> dict[str, Any]:
-    summary: dict[str, Any] = {"provider": outcome.provider, "status": "saved" if saved else outcome.status}
-    if outcome.detail:
-        summary["detail"] = outcome.detail
-    if saved:
-        summary |= {"provider_work_id": saved.provider_work_id, "matched_by": saved.matched_by,
-                    "created_work": saved.created_work}
-        if saved.merged_work_ids:
-            summary["merged_work_ids"] = saved.merged_work_ids
-    return summary
+@dataclass(frozen=True)
+class Imported:
+    identifier: Identifier
+    work_id: int | None
+    providers: dict[str, str]  # provider -> saved | not_found | mismatch | rate_limited | error | skipped
+    details: dict[str, str]  # why a provider was not saved, when known
+
+
+def save_fetched(conn: psycopg.Connection, papers: list[PaperFetch]) -> list[Imported]:
+    """Save every fetched record, then resolve each paper's final work_id (saves can merge works)."""
+    saved: set[tuple[str, str]] = set()
+    for paper in papers:
+        for rec in paper.records.values():
+            key = (rec.provider, rec.provider_work_id)
+            if key not in saved:
+                save_record(conn, rec)
+                saved.add(key)
+
+    results = []
+    for paper in papers:
+        work_id = None
+        if paper.records:
+            rec = next(iter(paper.records.values()))
+            work_id = conn.execute(
+                "SELECT work_id FROM work_records WHERE provider = %s AND provider_work_id = %s",
+                (rec.provider, rec.provider_work_id),
+            ).fetchone()["work_id"]
+        statuses = {p: "saved" if p in paper.records else paper.status[p] for p in PROVIDERS}
+        details = {p: d for p, d in paper.detail.items() if p not in paper.records}
+        results.append(Imported(paper.identifier, work_id, statuses, details))
+    return results

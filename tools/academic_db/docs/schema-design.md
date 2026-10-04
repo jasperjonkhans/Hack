@@ -9,6 +9,8 @@ Changes since this design, implemented in `migrations/002_claims.sql` and the `a
 - Claims, confidence-scored assessments and cited evidence were added (see [database.md](database.md)).
 - `refresh_work` and `merge_works` live in the database rather than in loader code.
 - Saves take an advisory lock, so parallel writers are safe (this replaces the "one loader at a time" limitation below).
+- `migrations/003_provenance.sql` adds per-provider abstracts, the `work_quality` view, and claim provenance (`source_work_id`, `source_quote`).
+- Imports anchor each paper on the requested identifier and reject other providers' records whose title doesn't match. Matching by ID alone let a corrupted OpenAlex record (BERT, W2896457183) attach an unrelated paper.
 
 ## 1. Goal
 

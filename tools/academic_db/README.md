@@ -14,7 +14,7 @@ An MCP server that lets Omnigent agents read and write the shared academic works
    ACADEMIC_DB_READER_URL=postgresql://academic_reader:...@<db-host>:5432/academic?sslmode=require
    ```
 
-   Optional: `S2_API_KEY` (Semantic Scholar rate-limits anonymous use quickly) and `OPENALEX_MAILTO` (your email, for OpenAlex's faster pool).
+   Strongly recommended: `S2_API_KEY` ([free key](https://www.semanticscholar.org/product/api#api-key-form)). Without it, Semantic Scholar rate-limits quickly and the counter-evidence tools lose citation sentences and passage search. Optional: `OPENALEX_MAILTO` (your email, for OpenAlex's faster pool).
 
 2. From the repository root, run `uv sync`. This package is a uv workspace member, so it installs into the root `.venv`.
 
@@ -24,28 +24,48 @@ An MCP server that lets Omnigent agents read and write the shared academic works
 
 | Tool | Access | Purpose |
 |---|---|---|
-| `find_work` | read | Look up a stored paper by DOI, arXiv ID, OpenAlex W-ID, Semantic Scholar ID or URL |
-| `search_works` | read | Title search with year, type and open-access filters, most cited first |
-| `get_work` | read | One paper: each provider's values and authors side by side, plus claims citing it |
+| `find_work` | read | Look up a stored paper by DOI, arXiv ID, OpenAlex W-ID, Semantic Scholar ID/CorpusId or URL |
+| `search_works` | read | Title search with year, type and open-access filters, most cited first. Compact rows, including `is_retracted` and `preprint_only` |
+| `get_work` | read | One paper: abstract, quality signals, each provider's values and authors, claims taken from it, and claims citing it |
 | `top_cited` | read | Most cited papers by year, type or journal |
 | `works_by_author` | read | One author's papers (author IDs are provider-specific) |
 | `review_queue` | read | Data-quality issues: title-only merges, providers disagreeing on the year |
 | `run_sql` | read | One read-only SQL statement, 15 s limit, through a login that cannot write |
 | `list_claims` | read | Claims with their current verdict and confidence |
-| `get_claim` | read | One claim's full assessment history and cited papers |
-| `import_work` | write | Fetch a paper from all three providers by identifier, merge and save it |
+| `get_claim` | read | One claim: its source paper and quote, and its full assessment history with cited papers |
+| `citing_statements` | read | What later papers say about a paper: citing papers with the sentences that mention it |
+| `search_passages` | read | Full-text passages (title, abstract, body) matching a query, e.g. the claim or its negation |
+| `import_works` | write | Fetch 1–50 papers from all three providers in one batch, merge and save them |
+| `import_work` | write | Same for a single paper, with the full saved record in the result |
 | `save_work` | write | Save one provider record the agent already has (e.g. from a search tool) |
-| `add_claim` | write | Record a claim to verify (duplicates return the existing claim) |
+| `add_claim` | write | Record a claim with its source paper and quote. Near-duplicates are returned instead of created |
 | `assess_claim` | write | Record a verdict with a 0–1 confidence, rationale and supporting or contradicting papers; history is kept |
 
 Read tools use the read-only `academic_reader` login, and write tools use the owner login. Writes are serialized with a database lock, so several agents saving papers at the same time cannot create duplicates.
 
+Imports anchor each paper on the identifier you asked for. Another provider's record is saved only if its title matches; otherwise it's reported as `mismatch`. This guards against provider records that carry another paper's metadata, which happens in OpenAlex.
+
+`citing_statements` and `search_passages` rely on Semantic Scholar. Without an `S2_API_KEY` it rate-limits quickly and returns no citation sentences; `citing_statements` then falls back to OpenAlex's most cited citing works.
+
 ## Assigning tools to agents
+
+| Tool | Lead | Scout | Verifier |
+|---|:-:|:-:|:-:|
+| `find_work`, `search_works`, `get_work` | ✓ | ✓ | ✓ |
+| `top_cited`, `works_by_author` | | ✓ | ✓ |
+| `list_claims`, `get_claim` | ✓ | ✓ | ✓ |
+| `search_passages` | | ✓ | ✓ |
+| `citing_statements`, `review_queue`, `run_sql` | | | ✓ |
+| `import_works`, `import_work`, `save_work` | | ✓ | `import_works` |
+| `add_claim` | ✓ | ✓ | |
+| `assess_claim` | | | ✓ |
+
+The Verifier can save papers so it can cite counter-evidence it finds without a round trip through the Lead.
 
 Add the server under `tools` in an agent's `config.yaml`, and allow-list that agent's tools. `ACADEMIC_DB_AGENT` is recorded as `created_by` / `assessed_by` on claims and verdicts.
 
 ```yaml
-# Lead: follows the evidence, poses claims
+# Lead: splits the question, poses claims, decides from verdicts
 tools:
   academic_db:
     type: mcp
@@ -57,7 +77,7 @@ tools:
 ```
 
 ```yaml
-# Scout: finds and saves papers, extracts claims
+# Scout: finds and saves papers for one facet of the question, extracts claims with their source
 tools:
   academic_db:
     type: mcp
@@ -65,12 +85,12 @@ tools:
     args: [run, --quiet, academic-db-mcp]
     env:
       ACADEMIC_DB_AGENT: scout
-    tools: [find_work, search_works, get_work, top_cited, works_by_author,
-            import_work, save_work, list_claims, get_claim, add_claim]
+    tools: [find_work, search_works, get_work, top_cited, works_by_author, search_passages,
+            import_works, import_work, save_work, list_claims, get_claim, add_claim]
 ```
 
 ```yaml
-# Verifier: checks claims against the papers, writes confidence-scored verdicts
+# Verifier: checks claims against their source and the wider literature, writes confidence-scored verdicts
 tools:
   academic_db:
     type: mcp
@@ -78,18 +98,25 @@ tools:
     args: [run, --quiet, academic-db-mcp]
     env:
       ACADEMIC_DB_AGENT: verifier
-    tools: [find_work, search_works, get_work, top_cited, works_by_author,
-            review_queue, run_sql, list_claims, get_claim, assess_claim]
+    tools: [find_work, search_works, get_work, top_cited, works_by_author, search_passages,
+            citing_statements, review_queue, run_sql, import_works, list_claims, get_claim, assess_claim]
 ```
 
 `uv run` finds the repository's project from the directory `omnigent run` was launched in, so this works from `demo/workspace` or any other folder inside the repository. The database URLs come from the root `.env`, never from YAML.
 
-## Typical flow
+## Recommended workflow
 
-1. The Lead or Scout records a claim with `add_claim`.
-2. The Scout finds papers (`search_works`, or a literature search tool) and saves them with `import_work` / `save_work`.
-3. The Verifier reads them (`get_work`), then calls `assess_claim` with a verdict, a confidence and the `work_id`s that support or contradict the claim.
-4. The Lead reads `list_claims` / `get_claim` to decide what to do next.
+Keep paper data out of the agents' context: tools save to the database and return compact rows, and agents pass IDs to each other, not text.
+
+1. **The Lead splits the question into 2–4 facets and starts one Scout per facet.** Split by facet, not by search tool. Providers return overlapping papers, and querying several providers is code's job, not an agent's.
+2. **Each Scout searches,** using its literature tools and `search_passages`, shortlists papers and saves them in one `import_works` call. It reads abstracts with `get_work` only for the shortlist. It records claims with `add_claim(text, source_work_id, source_quote)`, reuses near-duplicates it's shown, and returns the `claim_id`s to the Lead.
+3. **The Lead picks the claims its conclusion depends on** and sends them to Verifiers in batches, grouped by source paper so each paper is read once. One Verifier is usually enough; add 1–2 above about 10–15 claims.
+4. **Each Verifier, per claim:**
+   - Skips what code already checked: `get_work`'s `quality` shows retractions, preprint-only status and provider disagreements.
+   - Checks the claim is faithful to its source (`get_claim` → source quote, `get_work` → abstract).
+   - Looks for counter-evidence: `citing_statements` on the source, then `search_passages` with the claim and with its negation. It saves anything it will cite with `import_works`.
+   - Calls `assess_claim` with a confidence, a verdict, and a rationale that says what was searched.
+5. **The Lead reads `list_claims`** and decides, or starts another round.
 
 ## Development
 

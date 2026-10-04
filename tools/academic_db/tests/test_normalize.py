@@ -1,7 +1,7 @@
 import pytest
 from conftest import load_json, load_text
 
-from academic_db.normalize import from_arxiv, from_openalex, from_payload, from_semantic_scholar
+from academic_db.normalize import from_arxiv, from_arxiv_feed, from_openalex, from_payload, from_semantic_scholar
 
 
 def test_openalex_attention():
@@ -76,3 +76,20 @@ def test_missing_title_is_rejected():
 def test_wrong_payload_shape():
     with pytest.raises(ValueError, match="Unsupported payload"):
         from_payload("openalex", "<entry/>")
+
+
+def test_abstracts():
+    openalex = from_openalex(load_json("openalex_W2626778328.json"))
+    assert openalex.abstract.startswith("The dominant sequence transduction models")  # rebuilt from inverted index
+    arxiv = from_arxiv(load_text("arxiv_1706.03762.xml"))
+    assert arxiv.abstract.startswith("The dominant sequence transduction models") and "\n" not in arxiv.abstract
+    assert from_semantic_scholar(load_json("s2_attention.json") | {"abstract": " An abstract. "}).abstract == "An abstract."
+
+
+def test_arxiv_feed_with_several_entries_skips_error_entries():
+    feed = load_text("arxiv_1706.03762.xml")
+    entry = feed[feed.index("<entry"):feed.index("</entry>") + len("</entry>")]
+    error = ("<entry><id>http://arxiv.org/api/errors#incorrect_id_format_for_9999</id>"
+             "<title>Error</title></entry>")
+    two = feed.replace(entry, entry + error + entry.replace("1706.03762", "1810.04805"))
+    assert [r.provider_work_id for r in from_arxiv_feed(two)] == ["1706.03762", "1810.04805"]

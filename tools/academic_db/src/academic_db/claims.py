@@ -13,27 +13,57 @@ STANCES = ("supports", "contradicts")
 
 CLAIM_COLUMNS = (
     "id AS claim_id, text, created_by, created_at, verdict, confidence, rationale, "
-    "assessed_by, assessed_at, assessment_count"
+    "assessed_by, assessed_at, assessment_count, source_work_id, source_quote"
 )
 
+# Trigram similarity at which two claims are probably the same statement in different words.
+SIMILAR_THRESHOLD = 0.6
 
-def add_claim(conn: psycopg.Connection, text: str, created_by: str) -> dict[str, Any]:
-    """Record a claim, or return the existing one with the same text (case/whitespace-insensitive)."""
+
+def similar_claims(conn: psycopg.Connection, text: str, limit: int = 5) -> list[dict[str, Any]]:
+    with conn.transaction():
+        conn.execute("SELECT set_config('pg_trgm.similarity_threshold', %s, true)", (str(SIMILAR_THRESHOLD),))
+        return conn.execute(
+            "SELECT id AS claim_id, text, round(similarity(text, %(t)s)::numeric, 2) AS similarity "
+            "FROM claims WHERE text %% %(t)s ORDER BY similarity(text, %(t)s) DESC LIMIT %(n)s",
+            {"t": text, "n": limit},
+        ).fetchall()
+
+
+def add_claim(conn: psycopg.Connection, text: str, created_by: str, *, source_work_id: int | None = None,
+              source_quote: str | None = None, allow_similar: bool = False) -> dict[str, Any]:
+    """Record a claim with the paper and passage it came from.
+
+    Identical text returns the existing claim. Near-duplicates are returned instead of creating a new
+    claim unless allow_similar is set, so parallel scouts do not make verifiers check one claim twice.
+    """
     text = text.strip()
     if not text:
         raise ValueError("claim text is empty")
+    quote = (source_quote or "").strip() or None
     with conn.transaction():
-        row = conn.execute(
-            "INSERT INTO claims (text, created_by) VALUES (%s, %s) "
-            "ON CONFLICT ((md5(lower(btrim(text))))) DO NOTHING RETURNING id",
-            (text, created_by),
-        ).fetchone()
-        if row:
-            return {"claim_id": row["id"], "created": True}
-        row = conn.execute(
+        existing = conn.execute(
             "SELECT id FROM claims WHERE md5(lower(btrim(text))) = md5(lower(btrim(%s)))", (text,)
         ).fetchone()
-    return {"claim_id": row["id"], "created": False}
+        if existing:
+            return {"claim_id": existing["id"], "created": False}
+        if source_work_id is not None and conn.execute(
+                "SELECT 1 FROM works WHERE id = %s", (source_work_id,)).fetchone() is None:
+            raise ValueError(f"source work {source_work_id} is not in the database; import it first")
+        if not allow_similar and (similar := similar_claims(conn, text)):
+            return {"claim_id": None, "created": False, "similar_claims": similar,
+                    "hint": "Reuse one of these claim_ids, or call again with allow_similar=true if it is different"}
+        row = conn.execute(
+            "INSERT INTO claims (text, created_by, source_work_id, source_quote) VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT ((md5(lower(btrim(text))))) DO NOTHING RETURNING id",
+            (text, created_by, source_work_id, quote),
+        ).fetchone()
+        if row is None:  # inserted concurrently by another agent
+            row = conn.execute(
+                "SELECT id FROM claims WHERE md5(lower(btrim(text))) = md5(lower(btrim(%s)))", (text,)
+            ).fetchone()
+            return {"claim_id": row["id"], "created": False}
+    return {"claim_id": row["id"], "created": True}
 
 
 def assess_claim(conn: psycopg.Connection, *, claim_id: int, confidence: float, verdict: str,
@@ -86,6 +116,10 @@ def get_claim(conn: psycopg.Connection, claim_id: int) -> dict[str, Any] | None:
     claim = conn.execute(f"SELECT {CLAIM_COLUMNS} FROM claim_status WHERE id = %s", (claim_id,)).fetchone()
     if claim is None:
         return None
+    claim["source"] = conn.execute(
+        "SELECT id AS work_id, title, publication_year, doi, arxiv_id FROM works WHERE id = %s",
+        (claim["source_work_id"],),
+    ).fetchone() if claim["source_work_id"] else None
     claim["assessments"] = conn.execute(
         """
         SELECT a.id AS assessment_id, a.verdict, a.confidence, a.rationale, a.assessed_by, a.assessed_at,
