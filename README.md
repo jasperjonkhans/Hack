@@ -132,6 +132,8 @@ Optional formal-proof support is available to the local experiment worker in `te
 
 ## Presentation
 
+The link and credentials to test the demo are at the end of the presentation.
+
 https://drive.google.com/file/d/11Fsainof6ZpvWurH-3jQLUpqJAtQwL3a/view?usp=sharing
 
 ## Team
