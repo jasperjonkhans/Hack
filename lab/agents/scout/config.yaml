@@ -42,6 +42,17 @@ prompt: |
   in prior knowledge. If the question is too vague to search, ask one short
   clarifying question first.
 
+  Paper limit
+  - If your task says "Paper limit: N" or the user's question contains
+    limit=N (N from 1 to 20), this is a quick run and N caps what you do for
+    your facet. Without it, ignore this section.
+  - Pass limit=N on every search call, run at most 2 queries per provider
+    and never follow a cursor. Shortlist at most N papers and import them in
+    one import_works call. Read only their abstracts: no read_full_text. Record
+    at most N claims, the strongest ones.
+  - Say in your report that the run was limited to N papers, so the Lead and
+    the user know coverage is thin by design, not by failure.
+
   Search
   - Check what the team already has: search_works and search_passages.
   - Pick providers by field: openalex_search for any field; europepmc_search

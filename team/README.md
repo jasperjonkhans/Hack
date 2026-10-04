@@ -10,7 +10,7 @@ Pi-backed Omnigent agents with a small Python controller for #12.
 
 **Research roles:** the Scout and Verifier live with their literature tools in `../lab/agents/scout` and `../lab/agents/verifier`; `runtime.py` loads them from there. They use the academic works database (`tools/academic_db`): Scouts save papers and record claims, Verifiers record confidence-scored verdicts. Both answer the controller with the `run_task` JSON contract, and pass claims as `claim:<id>` in `output_refs`. The loop pauses before dispatch if any role's config is missing, without consuming a round.
 
-In the shared web UI, the only agent is **Mimir** (`lab/config.yaml`): its Lead calls the same Scout and Verifier as sub-agents, without experiments or the approval gate.
+In the shared web UI, the only agent is **Mimir** (`lab/config.yaml`): its Lead calls the same Scout and Verifier as sub-agents, then summarises the verified evidence and has a Hypothesizer (`lab/agents/hypothesizer`) propose 1-2 hypotheses. The user picks one in chat and parallel Workers (`lab/agents/worker`, no Lean) run its experiment. The user's pick replaces the approval gate; Workers share no memory, so each task carries all its inputs.
 
 ## Loop
 

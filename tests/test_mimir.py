@@ -32,20 +32,43 @@ def dispatch_targets(spec):
     return None
 
 
-def test_lead_delegates_to_scout_and_verifier():
+SUB_AGENTS = {"scout", "verifier", "hypothesizer", "worker"}
+
+
+def test_lead_delegates_to_its_sub_agents():
     spec = load(LAB)
     assert spec.executor.config["harness"] == "pi"
     assert spec.skills_filter == "none"
-    assert [sub.name for sub in spec.sub_agents] == ["scout", "verifier"]
+    assert {sub.name for sub in spec.sub_agents} == SUB_AGENTS
     # Discovered sub-agents are not enough: Omnigent registers sys_session_send
     # only for agents named in tools.agents (or spawn: true).
-    assert dispatch_targets(spec) == ["scout", "verifier"]
+    assert set(dispatch_targets(spec)) == SUB_AGENTS
+
+
+def test_lead_asks_the_user_before_experiments():
+    prompt = " ".join(load(LAB).instructions.split())
+    # Ground truth first, then proposals, then a user pick, then Workers.
+    order = [prompt.index(step) for step in ("4. Ground truth", "5. Hypotheses", "6. Experiment")]
+    assert order == sorted(order)
+    assert "Run nothing until the user answers" in prompt
+    assert "Only after the user picks" in prompt
+
+
+def test_hypothesizer_only_reads_the_database():
+    (server,) = load(LAB / "agents" / "hypothesizer").mcp_servers
+    assert set(server.tools) == READ_ONLY_DB_TOOLS
+
+
+def test_worker_has_no_database_and_cannot_spawn():
+    spec = load(LAB / "agents" / "worker")
+    assert not spec.mcp_servers  # workers share no state with each other or the DB
+    assert spec.skills_filter == "none"
 
 
 def test_agents_retry_failed_tools_at_most_twice():
     # Without a cap, Scouts cycled through every provider while the proxy
     # failed, hundreds of calls; Omnigent itself doesn't retry tool calls.
-    for path in (LAB, LAB / "agents" / "scout", LAB / "agents" / "verifier"):
+    for path in (LAB, *(LAB / "agents" / role for role in SUB_AGENTS)):
         prompt = " ".join(load(path).instructions.split())
         assert "at most 2 times" in prompt, path
         assert "retry once" not in prompt.lower(), path
@@ -64,8 +87,8 @@ def test_bundle_seeds_like_the_server_does():
     with tempfile.TemporaryDirectory() as tmp:
         data = _tar_gz_dir(materialize_bundle(LAB, Path(tmp) / "bundle"))
     spec = validate_agent_bundle(data, enforce_handler_allowlist=False)
-    assert [sub.name for sub in spec.sub_agents] == ["scout", "verifier"]
-    assert dispatch_targets(spec) == ["scout", "verifier"]
+    assert {sub.name for sub in spec.sub_agents} == SUB_AGENTS
+    assert set(dispatch_targets(spec)) == SUB_AGENTS
     names = tarfile.open(fileobj=BytesIO(data), mode="r:gz").getnames()
     for role in ("scout", "verifier"):
         assert any(n.startswith(f"./agents/{role}/tools/python/") for n in names), role
@@ -133,3 +156,11 @@ def test_picker_lists_only_mounted_agents(monkeypatch):
     assert [agent.name for agent in page.data] == ["Mimir"]
     assert (page.first_id, page.last_id) == ("a1", "a1")
     assert dataclasses.is_dataclass(page)
+
+
+def test_paper_limit_keyword_reaches_the_scouts():
+    lead = " ".join(load(LAB).instructions.split())
+    scout = " ".join(load(LAB / "agents" / "scout").instructions.split())
+    assert "limit=N" in lead and "Paper limit: N" in lead
+    assert "Without the keyword, never set a limit" in lead
+    assert "limit=N" in scout and "Paper limit: N" in scout
