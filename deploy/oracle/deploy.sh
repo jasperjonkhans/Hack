@@ -36,9 +36,13 @@ main() {
 
   uv sync --locked --quiet
   # Agents start academic-db-mcp from their session folder, which is often
-  # outside this project; a tool install puts it on PATH (~/.local/bin). The
-  # editable install still reads this repository's .env.
-  uv tool install --quiet --force --editable tools/academic_db
+  # outside this project, so put it on PATH (~/.local/bin). Link the entry
+  # point of the locked env rather than `uv tool install`: a tool install
+  # resolves afresh, ignoring uv.lock, and once pulled in an incompatible mcp.
+  # It still reads this repository's .env.
+  uv tool uninstall academic-db-mcp >/dev/null 2>&1 || true
+  mkdir -p "$HOME/.local/bin"
+  ln -sfn "$repo_dir/.venv/bin/academic-db-mcp" "$HOME/.local/bin/academic-db-mcp"
   check_env "$repo_dir/.env"
 
   local version
