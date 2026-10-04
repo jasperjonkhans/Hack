@@ -16,8 +16,10 @@ executor:
     name: openrouter
 # Only the tools below; never skills installed on the machine running the agent.
 skills: none
-# Sub-agents: agents/scout and agents/verifier, called with sys_session_send.
 tools:
+  # Sub-agents agents/scout and agents/verifier. Naming them here is what gives
+  # the Lead sys_session_send; Omnigent doesn't offer it for discovered ones alone.
+  agents: [scout, verifier]
   academic_db:
     type: mcp
     command: uv
