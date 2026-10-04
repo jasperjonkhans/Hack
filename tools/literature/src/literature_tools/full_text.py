@@ -14,7 +14,6 @@ import importlib.util
 import io
 import json
 import logging
-import os
 from pathlib import Path
 import re
 import unicodedata
@@ -251,7 +250,7 @@ def _try_pdfs(ids, attempts):
 # ── Resolution and loading ──────────────────────────────────────
 
 def _cache_path(key):
-    root = Path(os.environ.get("SEARCH_STATE_DIR", Path.home() / ".cache/discovery-lab/search")) / "fulltext"
+    root = Path(_s.setting("SEARCH_STATE_DIR") or Path.home() / ".cache/discovery-lab/search") / "fulltext"
     root.mkdir(parents=True, exist_ok=True)
     return root / (re.sub(r"[^\w.-]", "_", key) + ".json")
 

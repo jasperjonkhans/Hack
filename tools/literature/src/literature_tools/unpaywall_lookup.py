@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import importlib.util
-import os
 from pathlib import Path
 import urllib.parse
 
@@ -45,9 +44,9 @@ def unpaywall_find_full_text(doi: str) -> dict:
     normal = _s.doi(_s.text(doi, "doi"))
     if not normal:
         raise _s.SearchError("invalid_arguments", "doi must look like 10.xxxx/....")
-    email = os.environ.get("CONTACT_EMAIL")
+    email = _s.setting("CONTACT_EMAIL")
     if not email:
-        raise _s.SearchError("configuration", "Set the CONTACT_EMAIL environment variable; Unpaywall requires an email address.")
+        raise _s.SearchError("configuration", "Set CONTACT_EMAIL in the environment or the repository .env; Unpaywall requires an email address.")
     url = _API_URL + urllib.parse.quote(normal, safe="/") + "?" + urllib.parse.urlencode({"email": email})
     try:
         data = _s.get_json("unpaywall", url)

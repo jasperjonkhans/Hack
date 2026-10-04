@@ -60,6 +60,16 @@ class SearchTests(unittest.TestCase):
         self.assertNotIn('error', second)
         self.assertIn('abstract', second['results'][0])
 
+    def test_settings_fall_back_to_repository_dotenv(self):
+        env = {k: v for k, v in os.environ.items() if k != 'OPENALEX_API_KEY'}
+        with patch.dict(os.environ, env, clear=True), patch.object(OA._s, '_dotenv', return_value={'OPENALEX_API_KEY': 'from-file'}), \
+                patch.object(OA._s, 'get_json', return_value={}) as get_json:
+            OA._get_json('https://api.openalex.org/works', {})
+            with patch.dict(os.environ, OPENALEX_API_KEY='from-env'):
+                OA._get_json('https://api.openalex.org/works', {})
+        self.assertEqual([c.kwargs['headers']['Authorization'] for c in get_json.call_args_list],
+                         ['Bearer from-file', 'Bearer from-env'])
+
     def test_empty_or_null_cursor_starts_a_new_search(self):
         for cursor in ('', 'null', 'None'):
             with patch.object(OA._s, 'fetch', return_value=oa_page()):
