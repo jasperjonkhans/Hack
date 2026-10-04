@@ -5,6 +5,7 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from typing import Any
 
 import httpx
@@ -23,6 +24,11 @@ ARXIV_INTERVAL = 3.0  # arXiv asks for at least 3 s between requests
 
 _arxiv_lock = threading.Lock()
 _arxiv_last = 0.0
+
+try:  # The literature tools' limiter spaces arXiv calls across every process on this host.
+    from literature_tools.search_support import SearchError, request_slot
+except ImportError:  # running without the literature tools installed
+    SearchError, request_slot = None, None
 
 
 class RateLimited(Exception):
@@ -100,22 +106,36 @@ def semantic_scholar_papers(keys: Sequence[str]) -> list[dict[str, Any] | None]:
     return papers
 
 
+@contextmanager
+def _arxiv_slot() -> Iterator[None]:
+    """Wait for arXiv's 3 s spacing, shared with the Scout/Verifier search tools when installed."""
+    global _arxiv_last
+    if request_slot is not None:
+        try:
+            with request_slot("arxiv", ARXIV_INTERVAL):
+                yield
+        except SearchError as exc:  # long cooldown after a 429 from any process
+            raise RateLimited(str(exc)) from exc
+        return
+    with _arxiv_lock:
+        wait = ARXIV_INTERVAL - (time.monotonic() - _arxiv_last)
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            yield
+        finally:
+            _arxiv_last = time.monotonic()
+
+
 def arxiv_feeds(arxiv_ids: Sequence[str]) -> list[str]:
     """Atom feeds covering the given IDs (normalize.from_arxiv_feed extracts the entries)."""
-    global _arxiv_last
     feeds = []
     for chunk in _chunks(arxiv_ids, ARXIV_CHUNK):
-        with _arxiv_lock:
-            wait = ARXIV_INTERVAL - (time.monotonic() - _arxiv_last)
-            if wait > 0:
-                time.sleep(wait)
-            try:
-                response = _request(
-                    "GET", "https://export.arxiv.org/api/query",
-                    params={"id_list": ",".join(chunk), "max_results": str(len(chunk))},
-                )
-            finally:
-                _arxiv_last = time.monotonic()
+        with _arxiv_slot():
+            response = _request(
+                "GET", "https://export.arxiv.org/api/query",
+                params={"id_list": ",".join(chunk), "max_results": str(len(chunk))},
+            )
         feeds.append(response.text)
     return feeds
 

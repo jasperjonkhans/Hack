@@ -162,13 +162,16 @@ class Loop:
         self.save()  # Consume the round before dispatch; never replay an interrupted batch.
         scouts = await asyncio.gather(*(
             self.task("scout", f"r{number}-scout-{i}", todo,
-                      instructions="Persist cited findings in shared memory without verification flags")
+                      instructions="Save papers and record claims with source quotes in the academic database; "
+                                   "do not assess them. List each claim as claim:<id> in output_refs")
             for i, todo in enumerate(todos, 1)
         ))
         verifiers = await asyncio.gather(*(
             self.task("verifier", f"r{number}-verifier-{i}", f"Verify: {report['objective']}",
                       scout_report=report,
-                      instructions="Read cited findings from memory; set verified/disputed flags with reasons; retain disputes")
+                      instructions="Assess every claim:<id> in scout_report.output_refs with assess_claim "
+                                   "(supported, contradicted or inconclusive, with confidence and cited evidence); "
+                                   "retain disputes")
             for i, report in enumerate(scouts, 1) if report["status"] == "completed"
         ))
         decision = await self.ask("review_research", {**REVIEW, "scope": "string", "proposal": PROPOSAL},

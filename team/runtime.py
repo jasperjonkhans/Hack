@@ -6,6 +6,7 @@ from contextlib import suppress
 import io
 import json
 from pathlib import Path
+import re
 import tarfile
 from urllib.parse import urlparse
 
@@ -33,6 +34,13 @@ def bundle(config_path, workspace):
     return payload.getvalue()
 
 
+def json_object(text):
+    """Parse an agent's JSON reply, tolerating a Markdown code fence around it."""
+    stripped = text.strip()
+    fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", stripped, re.DOTALL)
+    return json.loads(fenced.group(1) if fenced else stripped)
+
+
 def assistant_text(output):
     messages = [item for item in output
                 if item.get("type") == "message" and item.get("role") == "assistant"]
@@ -40,6 +48,10 @@ def assistant_text(output):
         return ""
     return "".join(block.get("text", "") for block in messages[-1].get("content", [])
                    if block.get("type") in ("output_text", "text"))
+
+
+# Research roles live with their literature tools in lab/agents/, outside team/.
+LAB_ROLES = ("scout", "verifier")
 
 
 class OmnigentRuntime:
@@ -52,14 +64,18 @@ class OmnigentRuntime:
         self.client = None
 
     def config_path(self, role):
-        return self.team / "config.yaml" if role == "lead" else self.team / "agents" / role / "config.yaml"
+        if role == "lead":
+            return self.team / "config.yaml"
+        if role in LAB_ROLES:
+            return self.team.parent / "lab" / "agents" / role / "config.yaml"
+        return self.team / "agents" / role / "config.yaml"
 
     def preflight(self, phase):
         roles = {"lead": ("lead",), "research": ("lead", "scout", "verifier"),
                  "experiments": ("lead", "worker")}[phase]
         missing = [str(self.config_path(role)) for role in roles if not self.config_path(role).is_file()]
         if missing:
-            raise FileNotFoundError("External roles are not implemented in this PR: " + ", ".join(missing))
+            raise FileNotFoundError("Missing agent configs: " + ", ".join(missing))
 
     async def __aenter__(self):
         from omnigent_client import OmnigentClient
@@ -89,7 +105,7 @@ class OmnigentRuntime:
                         messages.append(event.item)
                     if isinstance(event, CompletedEvent):
                         text = assistant_text(event.response.output) or assistant_text(messages)
-                        result = json.loads(text)
+                        result = json_object(text)
                         if not isinstance(result, dict):
                             raise ValueError(f"Agent {role} must return a JSON object")
                         return {**result, "session_id": chat.session_id}
