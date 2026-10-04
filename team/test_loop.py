@@ -87,7 +87,9 @@ class LoopTests(unittest.IsolatedAsyncioTestCase):
         self.assertLess(max(i for i, role in enumerate(roles) if role == "scout"), roles.index("verifier"))
         review = next(req for role, req, _ in self.agents.calls if req["operation"] == "review_research")
         self.assertEqual(len(review["verifiers"]), 2)
-        self.assertIn("without verification flags", self.agents.calls[1][1]["instructions"])
+        self.assertIn("do not assess them", self.agents.calls[1][1]["instructions"])
+        verifier = next(req for role, req, _ in self.agents.calls if role == "verifier")
+        self.assertIn("claim:<id>", verifier["instructions"])
 
     async def test_research_cap_is_three_total_rounds(self):
         self.agents.research_complete = False
@@ -217,14 +219,26 @@ class LoopTests(unittest.IsolatedAsyncioTestCase):
             await main(["--run", self.temp.name, "--json", "status"])
         snapshot = json.loads(output.getvalue())
         self.assertEqual(snapshot["plan_id"], self.loop.plan_id())
-        self.assertEqual(snapshot["run_directory"], self.temp.name)
+        self.assertEqual(Path(snapshot["run_directory"]), Path(self.temp.name).resolve())
         self.assertEqual(len(self.agents.calls), before)
 
-    async def test_missing_roles_are_references_not_placeholder_implementations(self):
+    async def test_research_roles_resolve_to_lab_agents(self):
         runtime = OmnigentRuntime(TEAM, "http://localhost:6767")
-        with self.assertRaisesRegex(FileNotFoundError, "scout.*verifier"):
-            runtime.preflight("research")
+        for role in ("scout", "verifier"):
+            self.assertEqual(runtime.config_path(role), TEAM.parent / "lab" / "agents" / role / "config.yaml")
+        runtime.preflight("research")
         runtime.preflight("experiments")
+
+    async def test_missing_role_blocks_dispatch(self):
+        with tempfile.TemporaryDirectory() as root:
+            team = Path(root) / "team"
+            (team / "agents" / "worker").mkdir(parents=True)
+            for path in (team / "config.yaml", team / "agents" / "worker" / "config.yaml"):
+                path.write_text((TEAM / path.relative_to(team)).read_text())
+            runtime = OmnigentRuntime(team, "http://localhost:6767")
+            with self.assertRaisesRegex(FileNotFoundError, "scout.*verifier"):
+                runtime.preflight("research")
+            runtime.preflight("experiments")
 
 
 class RuntimeTests(unittest.IsolatedAsyncioTestCase):
@@ -273,6 +287,14 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(bound, [("conv_test", {"runner_id": "runner_pi"})])
         self.assertFalse(chat.cancelled)
 
+    async def test_reply_in_a_code_fence_is_accepted(self):
+        from omnigent.server.schemas import CompletedEvent
+        fenced = "```json\n" + json.dumps(result()) + "\n```"
+        messages = [{"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": fenced}]}]
+        event = CompletedEvent.model_construct(type="response.completed", response=SimpleNamespace(output=messages))
+        runtime, _, _ = self.make_runtime([event])
+        self.assertEqual((await runtime.invoke("scout", {}, TEAM))["status"], "completed")
+
     async def test_failed_turn_is_not_treated_as_a_result(self):
         from omnigent.server.schemas import FailedEvent
         runtime, chat, _ = self.make_runtime([FailedEvent.model_construct(type="response.failed")])
@@ -288,7 +310,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
 
     def test_bundles_have_no_subagent_grants(self):
         from omnigent.server.bundles import validate_agent_bundle
-        for role in ("lead", "worker"):
+        for role in ("lead", "worker", "scout", "verifier"):
             data = bundle(OmnigentRuntime(TEAM, "http://localhost:6767").config_path(role), TEAM)
             with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
                 self.assertFalse(any(name.startswith("agents/") for name in archive.getnames()))
@@ -296,10 +318,14 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(spec.spawn)
             self.assertEqual(spec.tools.agents, [])
             self.assertEqual(spec.executor.config["harness"], "pi")
-            if role == "lead":
-                self.assertIsNone(spec.os_env)
-            else:
+            if role == "worker":
                 self.assertNotEqual(spec.os_env.sandbox.type, "none")
+            else:
+                self.assertIsNone(spec.os_env)
+            if role in ("scout", "verifier"):  # their literature tools and database server travel with them
+                with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
+                    self.assertTrue(any(n.startswith("tools/python/") for n in archive.getnames()))
+                self.assertEqual([server.name for server in spec.mcp_servers], ["academic_db"])
 
     def test_only_local_servers_are_supported(self):
         with self.assertRaisesRegex(ValueError, "local"):

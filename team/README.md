@@ -8,11 +8,11 @@ Pi-backed Omnigent agents with a small Python controller for #12.
 - `runtime.py`: native `omnigent-client` sessions/SSE adapter for a local server and runner.
 - `research.ts` and `../.pi/extensions/research.ts`: Pi command/tools that start the same controller and display progress/results in the current chat.
 
-**Not implemented here:** scout, verifier, literature search or the evidence database. The lead can scope the direction and prepare todos; the loop then pauses before dispatch if `agents/scout/config.yaml` or `agents/verifier/config.yaml` is absent. No research round is consumed. Add those external roles and resume without replanning. Persistent evidence/flags remain #6's responsibility. Run checkpoints and task reports are not a replacement database.
+**Research roles:** the Scout and Verifier live with their literature tools in `../lab/agents/scout` and `../lab/agents/verifier`; `runtime.py` loads them from there. They use the academic works database (`tools/academic_db`): Scouts save papers and record claims, Verifiers record confidence-scored verdicts. Both answer the controller with the `run_task` JSON contract, and pass claims as `claim:<id>` in `output_refs`. The loop pauses before dispatch if any role's config is missing, without consuming a round.
 
 ## Loop
 
-Research: lead scope/todos → at most five parallel scouts → verifiers read findings from shared memory → lead reviews all reports. Stop early or after three total rounds; report gaps and propose question, hypothesis and plan.
+Research: lead scope/todos → at most five parallel scouts → one verifier per completed scout report assesses its `claim:<id>` refs in the academic database → lead reviews all reports. Stop early or after three total rounds; report gaps and propose question, hypothesis and plan.
 
 Pause for explicit approval. Experiments: lead todos → workers → lead analysis. Stop early or after three total rounds; retain reports and artifact references. A proposed scope/plan change pauses for renewed approval without resetting counters.
 
@@ -31,13 +31,11 @@ From the repository root, launch `omni pi` (or `.venv/bin/omnigent pi`) and allo
 
 The controller runs in the background while Pi remains interactive. Its footer shows round progress and its final checkpoint is added to the chat without triggering another model turn. Run references follow the current Pi session branch. Leaving, replacing or reloading the session stops its controller; interrupted dispatched rounds are not replayed automatically. The model-facing tools can start research or read status, never approve experiments.
 
-The extension uses Omnigent's native Pi bridge server URL when present, otherwise `http://localhost:6767`. Configure the Pi/provider backend and an online Pi-capable local runner. No remote/managed hosts are supported in this starter. Full research still requires the external roles above.
+The extension uses Omnigent's native Pi bridge server URL when present, otherwise `http://localhost:6767`. Configure the Pi/provider backend and an online Pi-capable local runner. No remote/managed hosts are supported in this starter. Scouts and Verifiers need `ACADEMIC_DB_URL` and `ACADEMIC_DB_READER_URL` in the repository-root `.env` (see `.env.example`).
 
 ## Direct CLI (optional)
 
 Use the repository's installed environment. Start the local server/runner with `.venv/bin/omnigent start`, and inspect its URL with `.venv/bin/omnigent server status`.
-
-After the external research roles are available:
 
 - Start research: `.venv/bin/python team/loop.py --run team/.runs/demo start "Research direction"`
 - Inspect the proposal: `.venv/bin/python team/loop.py --run team/.runs/demo status`
