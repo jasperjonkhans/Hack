@@ -4,11 +4,13 @@
 
 A team of specialist AI agents that reads the literature, turns what it finds into verified evidence, proposes testable hypotheses, and runs the experiment you choose, with a human deciding at every consequential step.
 
-Built on [Omnigent](https://github.com/omnigent-ai) at the **Hack-Nation hackathon, Vienna Hub, 3–4 October 2026**.
+Mimir is our entry to the **Agentic Scientific Discovery** challenge at the **Hack-Nation hackathon, Vienna Hub, 3–4 October 2026**, built on [Omnigent](https://github.com/omnigent-ai).
 
 ---
 
 ## The challenge
+
+**Agentic Scientific Discovery: build an AI lab for the next Nobel Prize caliber breakthrough.** Powered by [Databricks](https://www.databricks.com).
 
 Recent advances in LLMs and agent harnesses enable increasingly autonomous workflows.
 
