@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/mimir-logo-white.webp">
+    <img src="docs/assets/mimir-logo-black.webp" alt="Mimir logo" width="200">
+  </picture>
+</p>
+
 # Mimir
 
 **From questions to experiments.**
