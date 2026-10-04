@@ -32,6 +32,14 @@ tools with networking disabled, which breaks every provider.
 Run Omnigent from the project environment (`uv run omnigent …` or
 `.venv/bin/omnigent`) so the agents can import `literature-tools` and `pypdf`.
 
+## Configuration
+
+Copy `.env.example` to `.env` at the repository root and fill it in. The
+literature tools and `academic_db` both read it; real environment variables
+take precedence. `CONTACT_EMAIL` is required for Unpaywall, the database URLs
+for saving papers and claims; the API keys are optional. The model login is
+configured with `omnigent setup`, not in `.env`.
+
 ## Searching and continuing
 
 Search tools default to `detail="compact"`: identifiers, title, first three
@@ -168,7 +176,7 @@ access lookup and Loogle declaration search.
   cursor. `total_matches` is the upstream count, including skipped records.
 - zbMATH records carry both the zbMATH document ID and the Zbl number in
   `identifiers`.
-- Unpaywall requires `CONTACT_EMAIL`, available from the shell environment.
+- Unpaywall requires `CONTACT_EMAIL` (environment or `.env`).
   Responses are checked for matching DOI, Boolean access status and valid
   location structure. The best location is first. A negative result means
   Unpaywall has no known copy; continue checking other legitimate repositories.

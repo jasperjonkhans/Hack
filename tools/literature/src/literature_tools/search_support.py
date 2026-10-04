@@ -50,6 +50,29 @@ def guarded(fn):
     return wrapped
 
 
+@functools.cache
+def _dotenv():
+    """The repository-root .env, read the same way as academic_db."""
+    for directory in Path(__file__).resolve().parents:
+        path = directory / ".env"
+        if path.is_file():
+            values = {}
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    values[key.strip()] = value.strip().strip("'\"")
+            return values
+        if (directory / "uv.lock").is_file():
+            break  # the repository root has no .env
+    return {}
+
+
+def setting(name, default=None):
+    """An environment variable, falling back to the repository-root .env."""
+    return os.environ.get(name) or _dotenv().get(name) or default
+
+
 def load(name):
     """Import a sibling provider module by path, sharing the loading style of the provider modules."""
     spec = importlib.util.spec_from_file_location("_lab_" + name, Path(__file__).with_name(name + ".py"))
@@ -212,7 +235,7 @@ def page(provider, query, context, results, total, position, consumed, previous,
 @contextmanager
 def request_slot(provider, interval):
     """Serialise requests across threads and Omnigent subprocesses on this host."""
-    root = Path(os.environ.get("SEARCH_STATE_DIR", Path.home() / ".cache/discovery-lab/search"))
+    root = Path(setting("SEARCH_STATE_DIR") or Path.home() / ".cache/discovery-lab/search")
     root.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(root / f"{provider}.sqlite3", timeout=120)
     try:
