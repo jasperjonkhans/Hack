@@ -10,6 +10,8 @@ executor:
     harness: pi
     system_prompt_mode: replace
     context_files: false
+# Only the tools below; never skills installed on the machine running the agent.
+skills: none
 tools:
   # Literature and full-text tools: one file per tool in tools/python/.
   academic_db:

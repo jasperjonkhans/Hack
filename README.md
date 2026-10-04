@@ -27,7 +27,7 @@ root: `uv run omnigent stop`, then `uv run omnigent start --no-open`.
 ## Lean tool and skill
 
 - [Lean proof verification](docs/lean-proof-tool.md): LeanInteract-backed tool with compiler diagnostics, deadlines, and strict transitive axiom checks.
-- [Lean skill and Omnigent integration](docs/lean-skill.md): proof development, statement review, and fail-closed verification, with a native agent bundle in `demo/lean/`.
+- [Lean skill and Omnigent integration](docs/lean-skill.md): proof development, statement review, and fail-closed verification, carried by the experiment worker in `team/agents/worker/`.
 
 Install development dependencies: `uv sync --locked --extra dev` (Python 3.14+, matching the demo).
 

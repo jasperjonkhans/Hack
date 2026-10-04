@@ -59,7 +59,7 @@ def test_real_native_skill_dispatch(config, monkeypatch, tmp_path):
 
     # config prewarms the persistent REPL cache used by the native subprocess.
     monkeypatch.delenv("OMNIGENT_LEAN_PROJECT", raising=False)
-    bundle = Path(__file__).resolve().parents[1] / "demo" / "lean"
+    bundle = Path(__file__).resolve().parents[1] / "team" / "agents" / "worker"
     spec = load(bundle)
     wrapper = load_local_python_tools(
         spec.local_tools, bundle, srt_available=False, uv_available=False
