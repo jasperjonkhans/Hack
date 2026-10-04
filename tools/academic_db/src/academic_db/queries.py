@@ -29,6 +29,15 @@ _FIND_BY = {
         "SELECT work_id FROM work_records WHERE provider = 'semantic_scholar' "
         "AND (provider_work_id = %(v)s OR 'CorpusId:' || (raw -> 'externalIds' ->> 'CorpusId') = %(v)s)"
     ),
+    "pmid": (
+        "SELECT work_id FROM work_records WHERE (provider = 'openalex' AND "
+        "raw -> 'ids' ->> 'pmid' = 'https://pubmed.ncbi.nlm.nih.gov/' || %(v)s) "
+        "OR (provider = 'semantic_scholar' AND raw -> 'externalIds' ->> 'PubMed' = %(v)s)"
+    ),
+    "pmcid": (
+        "SELECT work_id FROM work_records WHERE provider = 'semantic_scholar' "
+        "AND raw -> 'externalIds' ->> 'PubMedCentral' = substr(%(v)s, 4)"
+    ),
 }
 
 
