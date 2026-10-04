@@ -6,6 +6,10 @@ executor:
   config:
     harness: pi
     context_files: false
+  model: stealth/space-bunny-alpha
+  auth:
+    type: provider
+    name: openrouter
 skills: none
 spawn: false
 prompt: |

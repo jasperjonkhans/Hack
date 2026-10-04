@@ -10,6 +10,10 @@ executor:
     harness: pi
     system_prompt_mode: replace
     context_files: false
+  model: stealth/space-bunny-alpha
+  auth:
+    type: provider
+    name: openrouter
 # Only the tools below; never skills installed on the machine running the agent.
 skills: none
 tools:

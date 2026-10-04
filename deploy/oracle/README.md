@@ -9,7 +9,7 @@ The shared Omnigent server runs on the Oracle Always Free VM `hack-nation-pg`
 | Web UI + API | `https://130-61-237-227.sslip.io` | Caddy terminates TLS (Let's Encrypt) |
 | Omnigent server | Docker, `ghcr.io/omnigent-ai/omnigent-server:v<uv.lock version>` | Also on `127.0.0.1:8000` for SSH tunnels |
 | Omnigent database | Docker `postgres:16`, not exposed | Separate from the `academic` database |
-| Team agents | `demo/team`, seeded as the built-in agent `hack-team` | Reloaded on every deploy |
+| Team agents | `lab/agents/scout` and `lab/agents/verifier`, seeded as built-in agents | Reloaded on every deploy |
 | Agent host | systemd `omnigent-host`, runs from `/opt/hack/.venv` | Executes agents and tools on the VM |
 | Deploys | GitHub Actions self-hosted runner on the VM (label `oracle`) | `.github/workflows/deploy.yml` |
 
@@ -62,11 +62,21 @@ sudo cp /opt/hack/deploy/oracle/omnigent-host.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now omnigent-host
 ```
 
-Log in as `lab`. In `omnigent setup`, select **Claude** → **Install it now**
-(Claude Code's native installer, into `~/.local/bin`; the credential menu only
-appears once the CLI is installed), then **+ Add** → **OpenRouter — API key**
-and paste the key. The key is stored under `~ubuntu/.omnigent/`, which agents
-on this host can read, so give the key a credit limit.
+Log in as `lab`. In `omnigent setup`, select **Pi** → **Install it now** (the
+credential menu only appears once the CLI is installed), then **+ Add** →
+**OpenRouter — API key** and paste the key. The agents pin
+`auth: {type: provider, name: openrouter}`, so the provider must keep the name
+`openrouter` that this preset gives it. The key is stored under
+`~ubuntu/.omnigent/`, which agents on this host can read, so give the key a
+credit limit.
+
+The agents run on Pi only. Through Pi, Omnigent sends model ids containing
+`claude` to an Anthropic-format endpoint, which this OpenRouter credential does
+not configure, so pick non-Claude OpenRouter models.
+
+The Scout and Verifier read the database URLs, `CONTACT_EMAIL`,
+`OPENALEX_MAILTO` and `OPENALEX_API_KEY` from `/opt/hack/.env` (see
+`.env.example`).
 
 ### Continuous deployment
 
