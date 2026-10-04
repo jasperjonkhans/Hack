@@ -1,0 +1,199 @@
+{
+  "config": {
+    "activation_probability": 0.1,
+    "adam_betas": [
+      [
+        0.0,
+        0.99
+      ],
+      [
+        0.0,
+        0.999
+      ],
+      [
+        0.9,
+        0.99
+      ],
+      [
+        0.9,
+        0.999
+      ]
+    ],
+    "change_fractions": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "dimension": 20,
+    "evaluation_seeds": [
+      100,
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111
+    ],
+    "exploration_seeds": [
+      9101
+    ],
+    "heldout_change_fractions": [
+      0.19,
+      0.56,
+      0.83
+    ],
+    "meta_rates": [
+      0.0001,
+      0.001,
+      0.01,
+      0.1
+    ],
+    "momenta": [
+      0.0,
+      0.5,
+      0.9,
+      0.99
+    ],
+    "noise_std": 0.3,
+    "rates": [
+      0.0001,
+      0.001,
+      0.01,
+      0.1
+    ],
+    "recovery_sustain": 100,
+    "recovery_threshold": 0.02,
+    "recovery_window": 100,
+    "regimes": [
+      "tracking",
+      "stationary",
+      "shock"
+    ],
+    "risk_failure_threshold": 1000000.0,
+    "rms_decays": [
+      0.9,
+      0.99,
+      0.999,
+      0.9999
+    ],
+    "samples": 6000,
+    "shock_fraction": 0.4,
+    "shock_scale": 30.0,
+    "trace_every": 500,
+    "tuning_seeds": [
+      0,
+      1,
+      2
+    ]
+  },
+  "created_unix": 1791076559.2753649,
+  "environment": {
+    "interop_threads": 1,
+    "max_rss_mib": 223.41796875,
+    "numpy": "2.5.3",
+    "platform": "Linux-7.1.9-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "python": "3.13.15",
+    "thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "threads": 1,
+    "torch": "2.10.0+cpu"
+  },
+  "evaluation_not_started": true,
+  "selected": {
+    "shock": {
+      "adam": {
+        "betas": [
+          0.0,
+          0.999
+        ],
+        "lr": 0.01
+      },
+      "guarded": {
+        "lr": 0.001,
+        "meta_lr": 0.1
+      },
+      "idbd": {
+        "lr": 0.01,
+        "meta_lr": 0.001
+      },
+      "momentum": {
+        "lr": 0.001,
+        "momentum": 0.9
+      },
+      "rmsprop": {
+        "alpha": 0.999,
+        "lr": 0.01
+      }
+    },
+    "stationary": {
+      "adam": {
+        "betas": [
+          0.0,
+          0.99
+        ],
+        "lr": 0.01
+      },
+      "guarded": {
+        "lr": 0.1,
+        "meta_lr": 0.1
+      },
+      "idbd": {
+        "lr": 0.01,
+        "meta_lr": 0.1
+      },
+      "momentum": {
+        "lr": 0.01,
+        "momentum": 0.0
+      },
+      "rmsprop": {
+        "alpha": 0.9999,
+        "lr": 0.001
+      }
+    },
+    "tracking": {
+      "adam": {
+        "betas": [
+          0.0,
+          0.999
+        ],
+        "lr": 0.01
+      },
+      "guarded": {
+        "lr": 0.1,
+        "meta_lr": 0.01
+      },
+      "idbd": {
+        "lr": 0.01,
+        "meta_lr": 0.01
+      },
+      "momentum": {
+        "lr": 0.01,
+        "momentum": 0.5
+      },
+      "rmsprop": {
+        "alpha": 0.999,
+        "lr": 0.01
+      }
+    }
+  },
+  "sources": {
+    "DESIGN.md": "6df1ecb13bf58442ed5458128798481e7030e692370c2a07858b0e8b14691b87",
+    "PROTOCOL.md": "b35c8c11f8a7597c5a190e2fd03a6c09b627de68a8cf9cea306d06304d8d3ccd",
+    "benchmark.py": "2bfe85e3daa90aafdc5af5ca2ed48b35afee99cbe6c0997845eec89a5687a008",
+    "idbd/__init__.py": "beda20cad93ebbacecf488e5a55e5be8a90502f90dcc738dc93350392a711413",
+    "idbd/optimizer.py": "ae2e601e492d1df489d3efcef885c6ae8c0d81b46d5e0b92a4a875f9a8433012",
+    "tests/test_benchmark.py": "827aa2e8eb12bfd808bfb697b38f1b672e28ba642c837caaed963b98cfcf5304",
+    "tests/test_optimizer.py": "459b012c793c8570fa36fe61a87e6aafc692a0458a4336098bb567f4f6f1ae46"
+  },
+  "tuning_file": "/home/jasperjonkhans/Hack/pi-trial-research/results/tuning.json",
+  "tuning_sha256": "a40dd61a26a68cdf75fc4e858c85af5b020781ccd3ee711686c50cc26be77a98"
+}

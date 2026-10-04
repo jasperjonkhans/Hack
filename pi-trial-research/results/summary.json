@@ -1,0 +1,1183 @@
+{
+  "comparisons": {
+    "permuted": {
+      "adam": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -813.9760749388169,
+            -519.6051199185696
+          ],
+          "ci95_ratio": [
+            0.471350766187602,
+            0.6100220668672539
+          ],
+          "mean_difference": -661.4004596047266,
+          "ratio_of_means": 0.5380166951660551,
+          "simultaneous_ci98_75_ratio": [
+            0.45391020154985245,
+            0.6332535006540612
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.13047106000314754,
+            -0.08313797119885216
+          ],
+          "ci95_ratio": [
+            0.62821521704392,
+            0.7255393952062664
+          ],
+          "mean_difference": -0.10626060730223873,
+          "ratio_of_means": 0.6740597745544535,
+          "simultaneous_ci98_75_ratio": [
+            0.6181779260568807,
+            0.7414189483555428
+          ]
+        }
+      },
+      "idbd": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            128.7385621615026,
+            192.9327170889184
+          ],
+          "ci95_ratio": [
+            1.2113120735214278,
+            1.3175172371195012
+          ],
+          "mean_difference": 157.44225769445296,
+          "ratio_of_means": 1.2569178204046627,
+          "simultaneous_ci98_75_ratio": [
+            1.2024108652057306,
+            1.3374309115630494
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            0.020245281922662076,
+            0.031174918305361284
+          ],
+          "ci95_ratio": [
+            1.1024271342848733,
+            1.163197187787448
+          ],
+          "mean_difference": 0.02565812988553948,
+          "ratio_of_means": 1.132194469224668,
+          "simultaneous_ci98_75_ratio": [
+            1.0947561923333906,
+            1.1718096937235465
+          ]
+        }
+      },
+      "matched_unguarded": {
+        "not_estimable": "failures retained; no successful-only contrast"
+      },
+      "momentum": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -13.335015842775109,
+            97.8753546297262
+          ],
+          "ci95_ratio": [
+            0.9824563797134613,
+            1.1393699320547686
+          ],
+          "mean_difference": 41.82335527068341,
+          "ratio_of_means": 1.0574156996990316,
+          "simultaneous_ci98_75_ratio": [
+            0.9616605193574205,
+            1.1611520397788424
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.0034924255527914727,
+            0.014844146258931193
+          ],
+          "ci95_ratio": [
+            0.9843212964789554,
+            1.0719180866251086
+          ],
+          "mean_difference": 0.005864958098122268,
+          "ratio_of_means": 1.0274208261670565,
+          "simultaneous_ci98_75_ratio": [
+            0.9734353603164354,
+            1.0832333402017431
+          ]
+        }
+      },
+      "rmsprop": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -677.7324963072629,
+            -385.62118025238215
+          ],
+          "ci95_ratio": [
+            0.5146467994964188,
+            0.6798507658395604
+          ],
+          "mean_difference": -524.8791324655843,
+          "ratio_of_means": 0.5947295930805784,
+          "simultaneous_ci98_75_ratio": [
+            0.4943531877924584,
+            0.7037576841654922
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.10507944187491552,
+            -0.059183940846205554
+          ],
+          "ci95_ratio": [
+            0.6776627635013992,
+            0.7871801334117957
+          ],
+          "mean_difference": -0.08137783081299765,
+          "ratio_of_means": 0.7297582794165951,
+          "simultaneous_ci98_75_ratio": [
+            0.6639178320107411,
+            0.8047267068807749
+          ]
+        }
+      }
+    },
+    "shock": {
+      "adam": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -805.7951932704206,
+            1938.781177864354
+          ],
+          "ci95_ratio": [
+            0.6072331391257764,
+            2.171410212459462
+          ],
+          "mean_difference": 231.4766617414441,
+          "ratio_of_means": 1.1273036349380012,
+          "simultaneous_ci98_75_ratio": [
+            0.5735025825832865,
+            2.5616298193510025
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.12170436796013903,
+            0.3089478470373433
+          ],
+          "ci95_ratio": [
+            0.7182636134576781,
+            1.828694682192138
+          ],
+          "mean_difference": 0.04267385294792331,
+          "ratio_of_means": 1.1086648465415225,
+          "simultaneous_ci98_75_ratio": [
+            0.688827666408986,
+            2.0783695185919937
+          ]
+        }
+      },
+      "idbd": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -36135.22315874547,
+            1968.047328341368
+          ],
+          "ci95_ratio": [
+            0.03735670439212168,
+            2.4321203772648197
+          ],
+          "mean_difference": -11330.371312635996,
+          "ratio_of_means": 0.1531955955225576,
+          "simultaneous_ci98_75_ratio": [
+            0.032658467363266754,
+            2.825016198050342
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -5.9775674954782145,
+            0.3137296320473881
+          ],
+          "ci95_ratio": [
+            0.052234872537506534,
+            1.9653420139361526
+          ],
+          "mean_difference": -1.8730036946777544,
+          "ratio_of_means": 0.1886097759808984,
+          "simultaneous_ci98_75_ratio": [
+            0.04625362577465113,
+            2.2083520377469457
+          ]
+        }
+      },
+      "matched_unguarded": {
+        "not_estimable": "failures retained; no successful-only contrast"
+      },
+      "momentum": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -3178.3777347025402,
+            1869.7188333224422
+          ],
+          "ci95_ratio": [
+            0.30737067174733507,
+            2.139555386382672
+          ],
+          "mean_difference": -448.7456617111787,
+          "ratio_of_means": 0.8203958374822566,
+          "simultaneous_ci98_75_ratio": [
+            0.2697535619116164,
+            2.462982353299077
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.5595081904729907,
+            0.2873515745535409
+          ],
+          "ci95_ratio": [
+            0.37442224719722317,
+            1.744700019401854
+          ],
+          "mean_difference": -0.08895365346057353,
+          "ratio_of_means": 0.830350631383238,
+          "simultaneous_ci98_75_ratio": [
+            0.3357960753796726,
+            1.9285031853737293
+          ]
+        }
+      },
+      "rmsprop": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -725.2833752843858,
+            1994.693487067531
+          ],
+          "ci95_ratio": [
+            0.6339483034583734,
+            2.2531788382564497
+          ],
+          "mean_difference": 300.4331002560375,
+          "ratio_of_means": 1.1717401219263637,
+          "simultaneous_ci98_75_ratio": [
+            0.5974106469363002,
+            2.620015877294299
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.10470152134887326,
+            0.320315416228837
+          ],
+          "ci95_ratio": [
+            0.7478152461140143,
+            1.8835864320569036
+          ],
+          "mean_difference": 0.05646525996590829,
+          "ratio_of_means": 1.1490165693825194,
+          "simultaneous_ci98_75_ratio": [
+            0.7172834961199959,
+            2.1242527506913254
+          ]
+        }
+      }
+    },
+    "stationary": {
+      "adam": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -277.7571469886236,
+            -246.17641437965548
+          ],
+          "ci95_ratio": [
+            0.20298454275461184,
+            0.2656774382881516
+          ],
+          "mean_difference": -261.61979128952936,
+          "ratio_of_means": 0.2344437306842564,
+          "simultaneous_ci98_75_ratio": [
+            0.19378774149823647,
+            0.27319536096642627
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.04740852076549342,
+            -0.04086641501560177
+          ],
+          "ci95_ratio": [
+            0.6855015173798872,
+            0.7169448907269705
+          ],
+          "mean_difference": -0.04405461868618135,
+          "ratio_of_means": 0.7014106811387398,
+          "simultaneous_ci98_75_ratio": [
+            0.68099068715211,
+            0.7210449503252364
+          ]
+        }
+      },
+      "idbd": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -53.493439006463504,
+            -41.123877362940306
+          ],
+          "ci95_ratio": [
+            0.5741135309044727,
+            0.6799989027175878
+          ],
+          "mean_difference": -47.28252467871484,
+          "ratio_of_means": 0.6288681875850434,
+          "simultaneous_ci98_75_ratio": [
+            0.5590732013713293,
+            0.692601936344787
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.008607963194052487,
+            -0.006690000519201632
+          ],
+          "ci95_ratio": [
+            0.9223406299785785,
+            0.9399195255411819
+          ],
+          "mean_difference": -0.00764230684959618,
+          "ratio_of_means": 0.9312310540479634,
+          "simultaneous_ci98_75_ratio": [
+            0.9199085851123645,
+            0.9420777217336921
+          ]
+        }
+      },
+      "matched_unguarded": {
+        "not_estimable": "failures retained; no successful-only contrast"
+      },
+      "momentum": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -58.742055612698984,
+            -46.99850558141375
+          ],
+          "ci95_ratio": [
+            0.5532006680809894,
+            0.6494971133630546
+          ],
+          "mean_difference": -52.85073557695221,
+          "ratio_of_means": 0.6025337191429552,
+          "simultaneous_ci98_75_ratio": [
+            0.5390120441174154,
+            0.6613801970194333
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.009781756345773525,
+            -0.007826155172977751
+          ],
+          "ci95_ratio": [
+            0.9125546497300905,
+            0.9304306852980663
+          ],
+          "mean_difference": -0.008795598033040926,
+          "ratio_of_means": 0.9216661524343556,
+          "simultaneous_ci98_75_ratio": [
+            0.9102134616778417,
+            0.9324886091852329
+          ]
+        }
+      },
+      "rmsprop": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -69.50170402039353,
+            -29.531142193133338
+          ],
+          "ci95_ratio": [
+            0.5158118516751786,
+            0.7439858347836648
+          ],
+          "mean_difference": -48.54156102508281,
+          "ratio_of_means": 0.6227142288244731,
+          "simultaneous_ci98_75_ratio": [
+            0.48623365219026865,
+            0.7781988438253385
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.011158923488422278,
+            -0.005479232148877019
+          ],
+          "ci95_ratio": [
+            0.9031181325338342,
+            0.9495231104317237
+          ],
+          "mean_difference": -0.008169398200979897,
+          "ratio_of_means": 0.9268350686148588,
+          "simultaneous_ci98_75_ratio": [
+            0.8965510149986963,
+            0.9553593105385241
+          ]
+        }
+      }
+    },
+    "timing": {
+      "adam": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -604.834401473718,
+            -477.1330253480278
+          ],
+          "ci95_ratio": [
+            0.5386881464112452,
+            0.6257638519527293
+          ],
+          "mean_difference": -546.5295509596339,
+          "ratio_of_means": 0.5777544250695992,
+          "simultaneous_ci98_75_ratio": [
+            0.5293853316797885,
+            0.63954196307431
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.10060909009149682,
+            -0.08041431500146234
+          ],
+          "ci95_ratio": [
+            0.683085073495792,
+            0.7337131793561302
+          ],
+          "mean_difference": -0.09158897033957042,
+          "ratio_of_means": 0.7051273845465859,
+          "simultaneous_ci98_75_ratio": [
+            0.6786787326087796,
+            0.7424746407426916
+          ]
+        }
+      },
+      "idbd": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            129.857974396512,
+            224.10013113659954
+          ],
+          "ci95_ratio": [
+            1.225478880060146,
+            1.391449379959714
+          ],
+          "mean_difference": 174.3858328138737,
+          "ratio_of_means": 1.3041126489998802,
+          "simultaneous_ci98_75_ratio": [
+            1.2054269002072566,
+            1.414775304793161
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            0.02514429613780245,
+            0.03465377090529098
+          ],
+          "ci95_ratio": [
+            1.1318549465674241,
+            1.1840169397757772
+          ],
+          "mean_difference": 0.029714069686121312,
+          "ratio_of_means": 1.156966345675572,
+          "simultaneous_ci98_75_ratio": [
+            1.1256806070841614,
+            1.1922385118963077
+          ]
+        }
+      },
+      "matched_unguarded": {
+        "not_estimable": "failures retained; no successful-only contrast"
+      },
+      "momentum": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            34.36458098287975,
+            133.96840747833713
+          ],
+          "ci95_ratio": [
+            1.0514032199679504,
+            1.2025823874451462
+          ],
+          "mean_difference": 83.54278892495186,
+          "ratio_of_means": 1.1257666605623888,
+          "simultaneous_ci98_75_ratio": [
+            1.0345339728914025,
+            1.2231739776106327
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            0.011894724518406927,
+            0.020999086946422194
+          ],
+          "ci95_ratio": [
+            1.0578826244505581,
+            1.1043899799073986
+          ],
+          "mean_difference": 0.016451581752033796,
+          "ratio_of_means": 1.0812164471648174,
+          "simultaneous_ci98_75_ratio": [
+            1.0517103945355075,
+            1.1096491497127654
+          ]
+        }
+      },
+      "rmsprop": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -423.9991470814318,
+            -317.87555658065463
+          ],
+          "ci95_ratio": [
+            0.624999811088266,
+            0.7150275696660935
+          ],
+          "mean_difference": -377.314066495905,
+          "ratio_of_means": 0.6646469864287031,
+          "simultaneous_ci98_75_ratio": [
+            0.6153911309511128,
+            0.7301264830337157
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.06764043221775688,
+            -0.05265003107432962
+          ],
+          "ci95_ratio": [
+            0.763293159742482,
+            0.8071377728959538
+          ],
+          "mean_difference": -0.06089523449854645,
+          "ratio_of_means": 0.782448236865935,
+          "simultaneous_ci98_75_ratio": [
+            0.7595767622218367,
+            0.8166309529050939
+          ]
+        }
+      }
+    },
+    "tracking": {
+      "adam": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -813.976074938817,
+            -519.6051199185696
+          ],
+          "ci95_ratio": [
+            0.47135076618760197,
+            0.6100220668672539
+          ],
+          "mean_difference": -661.4004596047266,
+          "ratio_of_means": 0.5380166951660551,
+          "simultaneous_ci98_75_ratio": [
+            0.45391020154985245,
+            0.6332535006540612
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.13047106000314757,
+            -0.08313797119885218
+          ],
+          "ci95_ratio": [
+            0.6282152170439199,
+            0.7255393952062663
+          ],
+          "mean_difference": -0.10626060730223873,
+          "ratio_of_means": 0.6740597745544535,
+          "simultaneous_ci98_75_ratio": [
+            0.6181779260568807,
+            0.7414189483555427
+          ]
+        }
+      },
+      "idbd": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            128.73856216150259,
+            192.93271708891834
+          ],
+          "ci95_ratio": [
+            1.2113120735214278,
+            1.3175172371195012
+          ],
+          "mean_difference": 157.4422576944529,
+          "ratio_of_means": 1.2569178204046627,
+          "simultaneous_ci98_75_ratio": [
+            1.2024108652057306,
+            1.3374309115630494
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            0.020245281922662093,
+            0.031174918305361284
+          ],
+          "ci95_ratio": [
+            1.102427134284873,
+            1.163197187787448
+          ],
+          "mean_difference": 0.025658129885539477,
+          "ratio_of_means": 1.132194469224668,
+          "simultaneous_ci98_75_ratio": [
+            1.0947561923333904,
+            1.1718096937235465
+          ]
+        }
+      },
+      "matched_unguarded": {
+        "not_estimable": "failures retained; no successful-only contrast"
+      },
+      "momentum": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -13.335015842775165,
+            97.87535462972626
+          ],
+          "ci95_ratio": [
+            0.9824563797134611,
+            1.1393699320547686
+          ],
+          "mean_difference": 41.823355270683415,
+          "ratio_of_means": 1.0574156996990316,
+          "simultaneous_ci98_75_ratio": [
+            0.9616605193574205,
+            1.1611520397788422
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.003492425552791484,
+            0.014844146258931195
+          ],
+          "ci95_ratio": [
+            0.9843212964789554,
+            1.0719180866251083
+          ],
+          "mean_difference": 0.005864958098122259,
+          "ratio_of_means": 1.0274208261670565,
+          "simultaneous_ci98_75_ratio": [
+            0.9734353603164354,
+            1.0832333402017431
+          ]
+        }
+      },
+      "rmsprop": {
+        "cumulative_excess_risk": {
+          "ci95_difference": [
+            -677.732496307263,
+            -385.62118025238203
+          ],
+          "ci95_ratio": [
+            0.5146467994964187,
+            0.6798507658395604
+          ],
+          "mean_difference": -524.8791324655843,
+          "ratio_of_means": 0.5947295930805785,
+          "simultaneous_ci98_75_ratio": [
+            0.4943531877924584,
+            0.7037576841654923
+          ]
+        },
+        "mse": {
+          "ci95_difference": [
+            -0.10507944187491554,
+            -0.059183940846205575
+          ],
+          "ci95_ratio": [
+            0.6776627635013992,
+            0.7871801334117954
+          ],
+          "mean_difference": -0.08137783081299765,
+          "ratio_of_means": 0.7297582794165951,
+          "simultaneous_ci98_75_ratio": [
+            0.663917832010741,
+            0.8047267068807746
+          ]
+        }
+      }
+    }
+  },
+  "environment": {
+    "interop_threads": 1,
+    "max_rss_mib": 348.1484375,
+    "numpy": "2.5.3",
+    "platform": "Linux-7.1.9-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "python": "3.13.15",
+    "thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "threads": 1,
+    "torch": "2.10.0+cpu"
+  },
+  "evaluation_sha256": "04c01705fcc01e67698a1b3d1e9af2ea20f32bc842d08129e22b7ae3ae705a61",
+  "max_permutation_mse_delta": 4.831690603168681e-12,
+  "summaries": {
+    "permuted": {
+      "adam": {
+        "conditional_median_recovery": 981.0,
+        "failures": 0,
+        "max_risk": 3.438335757460576,
+        "mean_cumulative_risk": 1431.6544617179625,
+        "mean_final_group_gain": {
+          "drifting": 0.008287751862341113,
+          "nuisance": 0.01918294497253979,
+          "stable": 0.019495336924261
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.32601255999312445,
+        "mean_runtime_seconds": 0.7502702832571231,
+        "recovered_changes": 19,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "guarded": {
+        "conditional_median_recovery": 396.5,
+        "failures": 0,
+        "max_risk": 3.4277768434154074,
+        "mean_cumulative_risk": 770.2540021132357,
+        "mean_final_group_gain": {
+          "drifting": 0.009095337062289667,
+          "nuisance": 0.002431978396992701,
+          "stable": 0.0024942870649928197
+        },
+        "mean_guard_events": 9.916666666666666,
+        "mean_mse": 0.21975195269088574,
+        "mean_runtime_seconds": 1.9237075704149902,
+        "recovered_changes": 36,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "idbd": {
+        "conditional_median_recovery": 382.0,
+        "failures": 0,
+        "max_risk": 3.5016990596264184,
+        "mean_cumulative_risk": 612.8117444187828,
+        "mean_final_group_gain": {
+          "drifting": 0.020150724718391997,
+          "nuisance": 0.009629197243413044,
+          "stable": 0.00991801112831791
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.19409382280534623,
+        "mean_runtime_seconds": 1.6656803119112737,
+        "recovered_changes": 36,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "matched_unguarded": {
+        "failures": 11,
+        "seeds": 12
+      },
+      "momentum": {
+        "conditional_median_recovery": 916.0,
+        "failures": 0,
+        "max_risk": 4.1010365969306415,
+        "mean_cumulative_risk": 728.4306468425524,
+        "mean_final_group_gain": {
+          "drifting": 0.009999999999999998,
+          "nuisance": 0.009999999999999998,
+          "stable": 0.009999999999999998
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.21388699459276342,
+        "mean_runtime_seconds": 0.4707667992139856,
+        "recovered_changes": 8,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "rmsprop": {
+        "conditional_median_recovery": 845.5,
+        "failures": 0,
+        "max_risk": 3.4853894261906757,
+        "mean_cumulative_risk": 1295.1331345788203,
+        "mean_final_group_gain": {
+          "drifting": 0.008682148468820377,
+          "nuisance": 0.01941799297564083,
+          "stable": 0.01971457846106727
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.3011297835038834,
+        "mean_runtime_seconds": 0.6288392334439171,
+        "recovered_changes": 12,
+        "seeds": 12,
+        "total_changes": 36
+      }
+    },
+    "shock": {
+      "adam": {
+        "conditional_median_recovery": 974.5,
+        "failures": 0,
+        "max_risk": 3.4374884352397426,
+        "mean_cumulative_risk": 1818.3036317397916,
+        "mean_final_group_gain": {
+          "drifting": 0.00696724443697357,
+          "nuisance": 0.015303662036550633,
+          "stable": 0.015653824851448808
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.39271074598736,
+        "mean_runtime_seconds": 0.7465124469793712,
+        "recovered_changes": 24,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "guarded": {
+        "conditional_median_recovery": 287.5,
+        "failures": 0,
+        "max_risk": 4.614512532580572,
+        "mean_cumulative_risk": 2049.7802934812357,
+        "mean_final_group_gain": {
+          "drifting": 0.008562031677858654,
+          "nuisance": 6.432134255583942e-07,
+          "stable": 2.4495331868909257e-06
+        },
+        "mean_guard_events": 11.916666666666666,
+        "mean_mse": 0.4353845989352833,
+        "mean_runtime_seconds": 1.9076023335607413,
+        "recovered_changes": 32,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "idbd": {
+        "conditional_median_recovery": 413.5,
+        "failures": 0,
+        "max_risk": 194.76111495122774,
+        "mean_cumulative_risk": 13380.151606117237,
+        "mean_final_group_gain": {
+          "drifting": 0.010564927733317969,
+          "nuisance": 0.009389495591464103,
+          "stable": 0.00945237577205744
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 2.3083882936130373,
+        "mean_runtime_seconds": 1.660026155936066,
+        "recovered_changes": 34,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "matched_unguarded": {
+        "failures": 4,
+        "seeds": 12
+      },
+      "momentum": {
+        "conditional_median_recovery": 428.0,
+        "failures": 0,
+        "max_risk": 172.88736651654628,
+        "mean_cumulative_risk": 2498.525955192414,
+        "mean_final_group_gain": {
+          "drifting": 0.0010000000000000002,
+          "nuisance": 0.0010000000000000002,
+          "stable": 0.0010000000000000002
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.5243382523958569,
+        "mean_runtime_seconds": 0.4673580735689029,
+        "recovered_changes": 36,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "rmsprop": {
+        "conditional_median_recovery": 901.0,
+        "failures": 0,
+        "max_risk": 3.4366022417373574,
+        "mean_cumulative_risk": 1749.347193225198,
+        "mean_final_group_gain": {
+          "drifting": 0.007028133849713399,
+          "nuisance": 0.01502155326716653,
+          "stable": 0.01539525091852488
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.3789193389693751,
+        "mean_runtime_seconds": 0.6206663769553415,
+        "recovered_changes": 23,
+        "seeds": 12,
+        "total_changes": 36
+      }
+    },
+    "stationary": {
+      "adam": {
+        "conditional_median_recovery": null,
+        "failures": 0,
+        "max_risk": 1.0096412651908573,
+        "mean_cumulative_risk": 341.73816057096093,
+        "mean_final_group_gain": {
+          "drifting": 0.026234886248607685,
+          "nuisance": 0.02650258825929948,
+          "stable": 0.027918796453083428
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.14754251375834163,
+        "mean_runtime_seconds": 0.7597647191141732,
+        "recovered_changes": 0,
+        "seeds": 12,
+        "total_changes": 0
+      },
+      "guarded": {
+        "conditional_median_recovery": null,
+        "failures": 0,
+        "max_risk": 1.0094419453681491,
+        "mean_cumulative_risk": 80.11836928143153,
+        "mean_final_group_gain": {
+          "drifting": 0.006135155588602043,
+          "nuisance": 0.003450154649952074,
+          "stable": 0.0042856881659299765
+        },
+        "mean_guard_events": 7.916666666666667,
+        "mean_mse": 0.10348789507216029,
+        "mean_runtime_seconds": 1.9296613991997826,
+        "recovered_changes": 0,
+        "seeds": 12,
+        "total_changes": 0
+      },
+      "idbd": {
+        "conditional_median_recovery": null,
+        "failures": 0,
+        "max_risk": 1.0010876113980358,
+        "mean_cumulative_risk": 127.40089396014635,
+        "mean_final_group_gain": {
+          "drifting": 0.012939489772618948,
+          "nuisance": 0.008264111199140892,
+          "stable": 0.009772189185344282
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.11113020192175647,
+        "mean_runtime_seconds": 1.6814494999319625,
+        "recovered_changes": 0,
+        "seeds": 12,
+        "total_changes": 0
+      },
+      "matched_unguarded": {
+        "failures": 12,
+        "seeds": 12
+      },
+      "momentum": {
+        "conditional_median_recovery": null,
+        "failures": 0,
+        "max_risk": 1.0010875549189595,
+        "mean_cumulative_risk": 132.9691048583837,
+        "mean_final_group_gain": {
+          "drifting": 0.009999999999999998,
+          "nuisance": 0.009999999999999998,
+          "stable": 0.009999999999999998
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.11228349310520121,
+        "mean_runtime_seconds": 0.3802874078198026,
+        "recovered_changes": 0,
+        "seeds": 12,
+        "total_changes": 0
+      },
+      "rmsprop": {
+        "conditional_median_recovery": null,
+        "failures": 0,
+        "max_risk": 1.1297777561120845,
+        "mean_cumulative_risk": 128.65993030651433,
+        "mean_final_group_gain": {
+          "drifting": 0.003259218204593559,
+          "nuisance": 0.004386783170735163,
+          "stable": 0.004240228043993838
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.11165729327314018,
+        "mean_runtime_seconds": 0.6333378540778843,
+        "recovered_changes": 0,
+        "seeds": 12,
+        "total_changes": 0
+      }
+    },
+    "timing": {
+      "adam": {
+        "conditional_median_recovery": 873.0,
+        "failures": 0,
+        "max_risk": 3.423642897768445,
+        "mean_cumulative_risk": 1294.3405056399206,
+        "mean_final_group_gain": {
+          "drifting": 0.0071067327501662,
+          "nuisance": 0.01842824570970344,
+          "stable": 0.019520204125138392
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.3106052089602749,
+        "mean_runtime_seconds": 0.7443975286247829,
+        "recovered_changes": 18,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "guarded": {
+        "conditional_median_recovery": 380.0,
+        "failures": 0,
+        "max_risk": 3.3960249856701514,
+        "mean_cumulative_risk": 747.8109546802866,
+        "mean_final_group_gain": {
+          "drifting": 0.009715407126606485,
+          "nuisance": 0.0025024386912680914,
+          "stable": 0.002573348000743005
+        },
+        "mean_guard_events": 9.583333333333334,
+        "mean_mse": 0.2190162386207044,
+        "mean_runtime_seconds": 1.9435937696641001,
+        "recovered_changes": 36,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "idbd": {
+        "conditional_median_recovery": 337.0,
+        "failures": 0,
+        "max_risk": 3.4945664233991702,
+        "mean_cumulative_risk": 573.4251218664127,
+        "mean_final_group_gain": {
+          "drifting": 0.02099618288584926,
+          "nuisance": 0.009648202791241912,
+          "stable": 0.009958851417535034
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.1893021689345831,
+        "mean_runtime_seconds": 1.6645020424233128,
+        "recovered_changes": 36,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "matched_unguarded": {
+        "failures": 11,
+        "seeds": 12
+      },
+      "momentum": {
+        "conditional_median_recovery": 907.0,
+        "failures": 0,
+        "max_risk": 3.471369816459331,
+        "mean_cumulative_risk": 664.2681657553347,
+        "mean_final_group_gain": {
+          "drifting": 0.009999999999999998,
+          "nuisance": 0.009999999999999998,
+          "stable": 0.009999999999999998
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.20256465686867065,
+        "mean_runtime_seconds": 0.4659580204170197,
+        "recovered_changes": 7,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "rmsprop": {
+        "conditional_median_recovery": 816.0,
+        "failures": 0,
+        "max_risk": 3.468957273200051,
+        "mean_cumulative_risk": 1125.1250211761917,
+        "mean_final_group_gain": {
+          "drifting": 0.007452703455616054,
+          "nuisance": 0.018705491611617307,
+          "stable": 0.019742253169981714
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.27991147311925085,
+        "mean_runtime_seconds": 0.6337090740562417,
+        "recovered_changes": 17,
+        "seeds": 12,
+        "total_changes": 36
+      }
+    },
+    "tracking": {
+      "adam": {
+        "conditional_median_recovery": 981.0,
+        "failures": 0,
+        "max_risk": 3.4383357574605764,
+        "mean_cumulative_risk": 1431.6544617179625,
+        "mean_final_group_gain": {
+          "drifting": 0.008287751862341113,
+          "nuisance": 0.01918294497253979,
+          "stable": 0.019495336924261
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.32601255999312445,
+        "mean_runtime_seconds": 0.7209078641608357,
+        "recovered_changes": 19,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "guarded": {
+        "conditional_median_recovery": 396.5,
+        "failures": 0,
+        "max_risk": 3.427776843415407,
+        "mean_cumulative_risk": 770.2540021132357,
+        "mean_final_group_gain": {
+          "drifting": 0.009095337062289667,
+          "nuisance": 0.002431978396992701,
+          "stable": 0.0024942870649928197
+        },
+        "mean_guard_events": 9.916666666666666,
+        "mean_mse": 0.21975195269088574,
+        "mean_runtime_seconds": 1.8146931784576736,
+        "recovered_changes": 36,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "idbd": {
+        "conditional_median_recovery": 382.0,
+        "failures": 0,
+        "max_risk": 3.501699059626418,
+        "mean_cumulative_risk": 612.8117444187828,
+        "mean_final_group_gain": {
+          "drifting": 0.020150724718391997,
+          "nuisance": 0.009629197243413042,
+          "stable": 0.00991801112831791
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.19409382280534623,
+        "mean_runtime_seconds": 1.5845293155289255,
+        "recovered_changes": 36,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "matched_unguarded": {
+        "failures": 11,
+        "seeds": 12
+      },
+      "momentum": {
+        "conditional_median_recovery": 916.0,
+        "failures": 0,
+        "max_risk": 4.101036596930641,
+        "mean_cumulative_risk": 728.4306468425524,
+        "mean_final_group_gain": {
+          "drifting": 0.009999999999999998,
+          "nuisance": 0.009999999999999998,
+          "stable": 0.009999999999999998
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.21388699459276342,
+        "mean_runtime_seconds": 0.44480210098360357,
+        "recovered_changes": 8,
+        "seeds": 12,
+        "total_changes": 36
+      },
+      "rmsprop": {
+        "conditional_median_recovery": 845.5,
+        "failures": 0,
+        "max_risk": 3.4853894261906753,
+        "mean_cumulative_risk": 1295.13313457882,
+        "mean_final_group_gain": {
+          "drifting": 0.008682148468820377,
+          "nuisance": 0.01941799297564083,
+          "stable": 0.019714578461067268
+        },
+        "mean_guard_events": 0.0,
+        "mean_mse": 0.3011297835038834,
+        "mean_runtime_seconds": 0.5988902544680362,
+        "recovered_changes": 12,
+        "seeds": 12,
+        "total_changes": 36
+      }
+    }
+  }
+}

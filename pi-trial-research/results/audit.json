@@ -1,0 +1,346 @@
+{
+  "hashes": {
+    "source_mismatches": [],
+    "tuning_matches": true,
+    "frozen_matches": true,
+    "evaluation_matches": true,
+    "original_comparison_unchanged": true
+  },
+  "group_means": {
+    "tracking": {
+      "guarded": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.2197519526908857,
+        "cumulative_risk": 770.2540021132357
+      },
+      "idbd": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.19409382280534623,
+        "cumulative_risk": 612.8117444187828
+      },
+      "adam": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.32601255999312445,
+        "cumulative_risk": 1431.6544617179625
+      },
+      "momentum": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.21388699459276345,
+        "cumulative_risk": 728.4306468425524
+      },
+      "rmsprop": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.30112978350388336,
+        "cumulative_risk": 1295.13313457882
+      },
+      "matched_unguarded": {
+        "rows": 12,
+        "failures": 11
+      }
+    },
+    "stationary": {
+      "guarded": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.1034878950721603,
+        "cumulative_risk": 80.11836928143151
+      },
+      "idbd": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.11113020192175649,
+        "cumulative_risk": 127.40089396014636
+      },
+      "adam": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.14754251375834165,
+        "cumulative_risk": 341.7381605709609
+      },
+      "momentum": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.11228349310520122,
+        "cumulative_risk": 132.96910485838373
+      },
+      "rmsprop": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.1116572932731402,
+        "cumulative_risk": 128.6599303065143
+      },
+      "matched_unguarded": {
+        "rows": 12,
+        "failures": 12
+      }
+    },
+    "shock": {
+      "guarded": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.4353845989352833,
+        "cumulative_risk": 2049.7802934812357
+      },
+      "idbd": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 2.3083882936130378,
+        "cumulative_risk": 13380.151606117235
+      },
+      "adam": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.39271074598736,
+        "cumulative_risk": 1818.3036317397916
+      },
+      "momentum": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.5243382523958569,
+        "cumulative_risk": 2498.5259551924146
+      },
+      "rmsprop": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.3789193389693751,
+        "cumulative_risk": 1749.3471932251982
+      },
+      "matched_unguarded": {
+        "rows": 12,
+        "failures": 4
+      }
+    },
+    "permuted": {
+      "guarded": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.2197519526908857,
+        "cumulative_risk": 770.2540021132359
+      },
+      "idbd": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.19409382280534623,
+        "cumulative_risk": 612.8117444187828
+      },
+      "adam": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.32601255999312445,
+        "cumulative_risk": 1431.6544617179625
+      },
+      "momentum": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.21388699459276345,
+        "cumulative_risk": 728.4306468425524
+      },
+      "rmsprop": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.30112978350388336,
+        "cumulative_risk": 1295.13313457882
+      },
+      "matched_unguarded": {
+        "rows": 12,
+        "failures": 11
+      }
+    },
+    "timing": {
+      "guarded": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.21901623862070443,
+        "cumulative_risk": 747.8109546802865
+      },
+      "idbd": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.1893021689345831,
+        "cumulative_risk": 573.4251218664128
+      },
+      "adam": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.3106052089602749,
+        "cumulative_risk": 1294.3405056399204
+      },
+      "momentum": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.20256465686867062,
+        "cumulative_risk": 664.2681657553346
+      },
+      "rmsprop": {
+        "rows": 12,
+        "failures": 0,
+        "mse": 0.27991147311925085,
+        "cumulative_risk": 1125.1250211761915
+      },
+      "matched_unguarded": {
+        "rows": 12,
+        "failures": 11
+      }
+    }
+  },
+  "selection_checks": {
+    "tracking": {
+      "guarded": {
+        "near_best": 2,
+        "failed_configs": 0,
+        "selected_index": 14
+      },
+      "idbd": {
+        "near_best": 1,
+        "failed_configs": 5,
+        "selected_index": 10
+      },
+      "adam": {
+        "near_best": 2,
+        "failed_configs": 0,
+        "selected_index": 9
+      },
+      "momentum": {
+        "near_best": 3,
+        "failed_configs": 7,
+        "selected_index": 9
+      },
+      "rmsprop": {
+        "near_best": 1,
+        "failed_configs": 0,
+        "selected_index": 10
+      }
+    },
+    "stationary": {
+      "guarded": {
+        "near_best": 8,
+        "failed_configs": 0,
+        "selected_index": 15
+      },
+      "idbd": {
+        "near_best": 4,
+        "failed_configs": 4,
+        "selected_index": 11
+      },
+      "adam": {
+        "near_best": 4,
+        "failed_configs": 0,
+        "selected_index": 8
+      },
+      "momentum": {
+        "near_best": 2,
+        "failed_configs": 7,
+        "selected_index": 8
+      },
+      "rmsprop": {
+        "near_best": 1,
+        "failed_configs": 0,
+        "selected_index": 7
+      }
+    },
+    "shock": {
+      "guarded": {
+        "near_best": 2,
+        "failed_configs": 0,
+        "selected_index": 7
+      },
+      "idbd": {
+        "near_best": 2,
+        "failed_configs": 7,
+        "selected_index": 9
+      },
+      "adam": {
+        "near_best": 2,
+        "failed_configs": 0,
+        "selected_index": 9
+      },
+      "momentum": {
+        "near_best": 2,
+        "failed_configs": 7,
+        "selected_index": 6
+      },
+      "rmsprop": {
+        "near_best": 1,
+        "failed_configs": 0,
+        "selected_index": 10
+      }
+    }
+  },
+  "posthoc": {
+    "stationary_later_risk": {
+      "guarded": 0.004757539664527068,
+      "idbd": 0.011667766670936703,
+      "adam": 0.03650599094531406,
+      "momentum": 0.011879323665453235,
+      "rmsprop": 0.006657888601448064
+    },
+    "shock_mse": {
+      "guarded": {
+        "median": 0.3110238977089469,
+        "maximum": 1.7985169570304738
+      },
+      "idbd": {
+        "median": 0.245344324100493,
+        "maximum": 24.324734507526745
+      },
+      "adam": {
+        "median": 0.3604655815218599,
+        "maximum": 0.6427737303365106
+      },
+      "momentum": {
+        "median": 0.2996830278195092,
+        "maximum": 2.6224523808001257
+      },
+      "rmsprop": {
+        "median": 0.3463373182557442,
+        "maximum": 0.6298104711942185
+      }
+    },
+    "tracking_own_recovery": {
+      "guarded": {
+        "count": 31,
+        "conditional_median": 867
+      },
+      "idbd": {
+        "count": 27,
+        "conditional_median": 557
+      },
+      "adam": {
+        "count": 32,
+        "conditional_median": 675.0
+      },
+      "momentum": {
+        "count": 26,
+        "conditional_median": 385.5
+      },
+      "rmsprop": {
+        "count": 32,
+        "conditional_median": 570.5
+      }
+    },
+    "shock_guarded_drift_gain": {
+      "2000": 0.013674342987498367,
+      "2500": 0.0007390066406650969,
+      "3000": 0.0007212633432952703,
+      "6000": 0.008562031677858654
+    },
+    "guarded_max_gain": 1.0000000000000009
+  },
+  "counts": {
+    "tuning_candidates": 240,
+    "tuning_trials": 720,
+    "tuning_failures": 105,
+    "tuning_committed_updates": 3737361,
+    "evaluation_rows": 360,
+    "evaluation_committed_updates": 1884819,
+    "tuning_seconds": 599.010328851873,
+    "evaluation_seconds": 352.2868913030252,
+    "evaluation_peak_rss_mib": 348.1484375
+  },
+  "all_assertions_passed": true
+}
