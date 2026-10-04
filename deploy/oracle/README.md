@@ -9,8 +9,8 @@ The shared Omnigent server runs on the Oracle Always Free VM `hack-nation-pg`
 | Web UI + API | `https://130-61-237-227.sslip.io` | Caddy terminates TLS (Let's Encrypt) |
 | Omnigent server | Docker, `ghcr.io/omnigent-ai/omnigent-server:v<uv.lock version>` | Also on `127.0.0.1:8000` for SSH tunnels |
 | Omnigent database | Docker `postgres:16`, not exposed | Separate from the `academic` database |
-| Team agents | `lab/agents/scout` and `lab/agents/verifier`, seeded as built-in agents | Reloaded on every deploy |
-| Agent host | systemd `omnigent-host`, runs from `/opt/hack/.venv` | Executes agents and tools on the VM |
+| Team agent | `lab/` as **Mimir**: research Lead with Scout and Verifier sub-agents | The only agent in the picker (`omnigent-overrides/`); reloaded on every deploy |
+| Agent host | systemd `omnigent-host`, runs from `/opt/hack/.venv` | Executes agents and tools on the VM; sandboxes need `bubblewrap` (installed by `bootstrap-vm.sh`) |
 | Deploys | GitHub Actions self-hosted runner on the VM (label `oracle`) | `.github/workflows/deploy.yml` |
 
 The Omnigent version comes from `uv.lock`, so bumping `omnigent` in a PR
@@ -106,3 +106,13 @@ All commands run on the VM from `/opt/hack/deploy/oracle`.
 - Server logs: `docker compose logs -f omnigent`.
 - Host logs: `journalctl -u omnigent-host -f`.
 - Release features: set `OMNIGENT_FEATURES` in `.env` (for example `canvas`), then `./deploy.sh`.
+
+## Agent picker
+
+The server offers a single agent, **Mimir** (`lab/`). Omnigent has no setting for
+this, so `omnigent-overrides/sitecustomize.py` (on the server's `PYTHONPATH`)
+lists only the agents mounted through `OMNIGENT_BUILTIN_AGENT_DIRS` and stops
+seeding Omnigent's packaged agents. Older agents stay in the database, hidden,
+so past chats still open. `tests/test_mimir.py` fails if an Omnigent
+upgrade renames what the overrides patch; if that ever reaches the server, the
+overrides log a warning and the picker simply lists every agent again.

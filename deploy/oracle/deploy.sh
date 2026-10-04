@@ -36,7 +36,7 @@ main() {
 
   docker compose pull --quiet
   docker compose up -d --remove-orphans
-  # Built-in agents are seeded only at startup, so pick up agent config changes.
+  # Built-in agents are seeded only at startup, so pick up agent config changes (lab/ is Mimir).
   docker compose restart omnigent
 
   if systemctl is-enabled --quiet omnigent-host 2>/dev/null; then
