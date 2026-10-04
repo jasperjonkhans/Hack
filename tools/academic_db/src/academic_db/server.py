@@ -48,7 +48,11 @@ WorkType = Annotated[
 class EvidenceItem(BaseModel):
     work_id: int = Field(description="A work in the database that this assessment cites")
     stance: Literal["supports", "contradicts"] = Field(description="Whether the paper supports or contradicts the claim")
-    note: str | None = Field(default=None, description="Where/how it does so, e.g. 'Table 2: BLEU 28.4 on WMT14 En-De'")
+    note: str | None = Field(default=None, description="How it does so, in your words, e.g. 'BLEU 28.4 on WMT14 En-De'")
+    quote: str | None = Field(default=None, description="Exact passage from the paper that supports/contradicts the claim")
+    location: str | None = Field(default=None, description="Where the passage is, e.g. 'Section 4.2' or check_quote's location")
+    match_score: float | None = Field(default=None, ge=0, le=1,
+                                      description="How closely the quote matches the paper's text, 0-1 (from check_quote)")
 
 
 # ---------------------------------------------------------------- read: papers

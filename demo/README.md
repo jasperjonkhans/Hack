@@ -83,7 +83,7 @@ This sequence is expressed in coordinator instructions, not a deterministic Pyth
 - Compose `Team(lead, (worker_a, worker_b))`; use `.on(Runtime(...))` to change all role runtimes.
 - Call `.export(destination, workspace)` to generate a bundle consumable by the normal `omnigent run` command.
 - `custom_team.py` is a small runnable example: `python custom_team.py`.
-- Add native Omnigent MCP/function tools or skills to your bundle as needed; see the upstream agent spec rather than inventing another tool protocol.
+- Add native Omnigent tools or skills to your bundle as needed; see the upstream agent spec rather than inventing another tool protocol. A ready-to-load Lean proof skill and native `tools/python/` wrapper are in `demo/lean/`; see [Lean integration](../docs/lean-skill.md). Directory bundles discover local tools from files, not the single-file YAML `type: function` syntax.
 
 Configs use JSON syntax inside `config.yaml` because JSON is valid YAML. This keeps show/build and the core dependency-free. The launcher expects compiler-generated configs; use `omnigent run <bundle>` directly if you rewrite configs into conventional YAML.
 

@@ -187,3 +187,39 @@ def test_save_fetched_resolves_work_ids_after_merges(conn):
     # The third save merges the first two works, so all three resolve to the surviving work.
     assert len({r.work_id for r in results[:3]}) == 1 and results[3].work_id is None
     assert results[0].providers["openalex"] == "saved" and results[3].providers["openalex"] == "not_found"
+
+
+def test_evidence_records_how_the_quote_was_checked(conn):
+    work_id = save_record(conn, ARXIV).work_id
+    claim = claims.add_claim(conn, f"The Transformer reaches 28.4 BLEU on WMT14 En-De {RUN}.", "scout",
+                             source_work_id=work_id)["claim_id"]
+    claims.assess_claim(conn, claim_id=claim, confidence=0.9, verdict="supported", rationale="Quoted result.",
+                        evidence=[{"work_id": work_id, "stance": "supports", "quote": "28.4 BLEU on the WMT 2014",
+                                   "location": "Abstract", "match_score": 0.97}],
+                        assessed_by="verifier")
+    (cited,) = claims.get_claim(conn, claim)["assessments"][0]["evidence"]
+    assert (cited["quote"], cited["location"], cited["match_score"]) == ("28.4 BLEU on the WMT 2014", "Abstract", 0.97)
+    with pytest.raises(ValueError, match="match_score"):
+        claims.assess_claim(conn, claim_id=claim, confidence=0.9, verdict="supported", rationale="x",
+                            evidence=[{"work_id": work_id, "stance": "supports", "match_score": 97}],
+                            assessed_by="verifier")
+
+
+def test_merge_keeps_evidence_checks(conn):
+    oa = save_record(conn, dataclasses.replace(OPENALEX, arxiv_id=None)).work_id
+    ax = save_record(conn, ARXIV).work_id
+    claim = claims.add_claim(conn, f"Checked evidence survives a merge {RUN}.", "scout")["claim_id"]
+    claims.assess_claim(conn, claim_id=claim, confidence=0.7, verdict="supported", rationale="x",
+                        evidence=[{"work_id": max(oa, ax), "stance": "supports", "quote": "q", "location": "p. 2",
+                                   "match_score": 0.8}], assessed_by="verifier")
+    save_record(conn, S2)  # merges oa and ax
+    (cited,) = claims.get_claim(conn, claim)["assessments"][0]["evidence"]
+    assert (cited["work_id"], cited["quote"], cited["location"], cited["match_score"]) == (min(oa, ax), "q", "p. 2", 0.8)
+
+
+def test_find_work_by_pmid(conn):
+    work_id = save_record(conn, isolated(from_openalex(load_json("openalex_nature14539.json")))).work_id
+    assert queries.find_work(conn, Identifier("pmid", "26017442"))["work_id"] in {work_id} | {
+        row["work_id"] for row in conn.execute(
+            "SELECT work_id FROM work_records WHERE raw -> 'ids' ->> 'pmid' = "
+            "'https://pubmed.ncbi.nlm.nih.gov/26017442'").fetchall()}

@@ -60,11 +60,13 @@ def _openalex_filter(filter_value: str) -> list[dict[str, Any]]:
 
 
 def openalex_works(*, openalex_ids: Sequence[str] = (), dois: Sequence[str] = (),
-                   arxiv_ids: Sequence[str] = ()) -> list[dict[str, Any]]:
+                   arxiv_ids: Sequence[str] = (), pmids: Sequence[str] = ()) -> list[dict[str, Any]]:
     """Full OpenAlex work objects for any of the given IDs (not found ones are simply absent)."""
     works: list[dict[str, Any]] = []
     for chunk in _chunks(openalex_ids, OPENALEX_CHUNK):
         works += _openalex_filter("openalex:" + "|".join(chunk))
+    for chunk in _chunks(pmids, OPENALEX_CHUNK):
+        works += _openalex_filter("pmid:" + "|".join(chunk))
     # Commas and pipes separate filter values, so DOIs containing them are looked up one by one.
     plain = [d for d in dois if "," not in d and "|" not in d]
     for chunk in _chunks(plain, OPENALEX_CHUNK):

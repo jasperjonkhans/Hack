@@ -24,7 +24,7 @@ An MCP server that lets Omnigent agents read and write the shared academic works
 
 | Tool | Access | Purpose |
 |---|---|---|
-| `find_work` | read | Look up a stored paper by DOI, arXiv ID, OpenAlex W-ID, Semantic Scholar ID/CorpusId or URL |
+| `find_work` | read | Look up a stored paper by DOI, arXiv ID, OpenAlex W-ID, Semantic Scholar ID/CorpusId, PMID, PMCID or URL |
 | `search_works` | read | Title search with year, type and open-access filters, most cited first. Compact rows, including `is_retracted` and `preprint_only` |
 | `get_work` | read | One paper: abstract, quality signals, each provider's values and authors, claims taken from it, and claims citing it |
 | `top_cited` | read | Most cited papers by year, type or journal |
@@ -35,11 +35,11 @@ An MCP server that lets Omnigent agents read and write the shared academic works
 | `get_claim` | read | One claim: its source paper and quote, and its full assessment history with cited papers |
 | `citing_statements` | read | What later papers say about a paper: citing papers with the sentences that mention it |
 | `search_passages` | read | Full-text passages (title, abstract, body) matching a query, e.g. the claim or its negation |
-| `import_works` | write | Fetch 1–50 papers from all three providers in one batch, merge and save them |
+| `import_works` | write | Fetch 1–50 papers from all three providers in one batch, merge and save them. Accepts DOIs, arXiv IDs, OpenAlex/Semantic Scholar IDs, PMIDs and PMCIDs; for zbMATH results pass the DOI |
 | `import_work` | write | Same for a single paper, with the full saved record in the result |
 | `save_work` | write | Save one provider record the agent already has (e.g. from a search tool) |
 | `add_claim` | write | Record a claim with its source paper and quote. Near-duplicates are returned instead of created |
-| `assess_claim` | write | Record a verdict with a 0–1 confidence, rationale and supporting or contradicting papers; history is kept |
+| `assess_claim` | write | Record a verdict with a 0–1 confidence, rationale and supporting or contradicting papers, each optionally with the exact `quote`, its `location` and a `match_score` from checking it against the paper's text; history is kept |
 
 Read tools use the read-only `academic_reader` login, and write tools use the owner login. Writes are serialized with a database lock, so several agents saving papers at the same time cannot create duplicates.
 
@@ -115,7 +115,7 @@ Keep paper data out of the agents' context: tools save to the database and retur
    - Skips what code already checked: `get_work`'s `quality` shows retractions, preprint-only status and provider disagreements.
    - Checks the claim is faithful to its source (`get_claim` → source quote, `get_work` → abstract).
    - Looks for counter-evidence: `citing_statements` on the source, then `search_passages` with the claim and with its negation. It saves anything it will cite with `import_works`.
-   - Calls `assess_claim` with a confidence, a verdict, and a rationale that says what was searched.
+   - Calls `assess_claim` with a confidence, a verdict, and a rationale that says what was searched. For each cited paper it includes the exact `quote`, its `location` and a `match_score` from checking the quote against the paper's text, e.g. with `check_quote`.
 5. **The Lead reads `list_claims`** and decides, or starts another round.
 
 ## Development

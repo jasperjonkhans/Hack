@@ -135,7 +135,10 @@ ANCHORS = {
     "doi": ("openalex", "semantic_scholar"),
     "openalex": ("openalex",),
     "semantic_scholar": ("semantic_scholar",),
+    "pmid": ("openalex", "semantic_scholar"),
+    "pmcid": ("semantic_scholar",),  # OpenAlex does not expose PMCIDs
 }
+LEARNED = ("doi", "arxiv", "pmid", "pmcid")  # IDs an accepted record teaches us about the paper
 _WORD = re.compile(r"[a-z0-9]+")
 
 
@@ -165,8 +168,8 @@ class PaperFetch:
     def keys_for(self, provider: str) -> list[tuple[str, str]]:
         """IDs this provider can look the paper up by, most specific first."""
         usable = {
-            "openalex": ("openalex", "doi", "arxiv"),
-            "semantic_scholar": ("semantic_scholar", "doi", "arxiv"),
+            "openalex": ("openalex", "doi", "pmid", "arxiv"),
+            "semantic_scholar": ("semantic_scholar", "doi", "pmid", "pmcid", "arxiv"),
             "arxiv": ("arxiv",),
         }[provider]
         return [(kind, self.known[kind]) for kind in usable if self.known.get(kind)]
@@ -176,6 +179,8 @@ class PaperFetch:
             (rec.provider in ("openalex", "semantic_scholar") and self.known.get(rec.provider) == rec.provider_work_id)
             or (rec.doi is not None and self.known.get("doi") == rec.doi)
             or (rec.arxiv_id is not None and self.known.get("arxiv") == rec.arxiv_id)
+            or (rec.pmid is not None and self.known.get("pmid") == rec.pmid)
+            or (rec.pmcid is not None and self.known.get("pmcid") == rec.pmcid)
         )
 
     def accept(self, provider: str, candidates: list[Record]) -> bool:
@@ -194,7 +199,7 @@ class PaperFetch:
             return False
         self.status[provider] = "found"
         self.records[provider] = match
-        for kind, value in (("doi", match.doi), ("arxiv", match.arxiv_id)):
+        for kind, value in zip(LEARNED, (match.doi, match.arxiv_id, match.pmid, match.pmcid), strict=True):
             if value and kind not in self.known:
                 self.known[kind] = value
         return True
@@ -226,14 +231,16 @@ def _fetch_batch(provider: str, wanted: dict[str, set[str]],
     """Records from one batched request, plus (kind, value) -> record where the provider answers per key."""
     if provider == "openalex":
         works = client.openalex_works(openalex_ids=sorted(wanted["openalex"]), dois=sorted(wanted["doi"]),
-                                      arxiv_ids=sorted(wanted["arxiv"]))
+                                      arxiv_ids=sorted(wanted["arxiv"]), pmids=sorted(wanted["pmid"]))
         return _normalize_all(from_openalex, works), {}
     if provider == "semantic_scholar":
         # The batch endpoint answers in request order, so each answer maps back to the key that asked for it.
-        asked = ([("semantic_scholar", v) for v in sorted(wanted["semantic_scholar"])]
-                 + [("doi", v) for v in sorted(wanted["doi"])] + [("arxiv", v) for v in sorted(wanted["arxiv"])])
-        prefix = {"semantic_scholar": "", "doi": "DOI:", "arxiv": "ARXIV:"}
-        answers = client.semantic_scholar_papers([prefix[kind] + value for kind, value in asked])
+        asked = [(kind, v) for kind in ("semantic_scholar", "doi", "pmid", "pmcid", "arxiv") for v in sorted(wanted[kind])]
+        prefix = {"semantic_scholar": "", "doi": "DOI:", "pmid": "PMID:", "pmcid": "PMCID:", "arxiv": "ARXIV:"}
+        # Semantic Scholar takes PMCIDs as bare digits.
+        answers = client.semantic_scholar_papers(
+            [prefix[kind] + (value.removeprefix("PMC") if kind == "pmcid" else value) for kind, value in asked]
+        )
         by_key = {}
         for key, payload in zip(asked, answers, strict=True):
             records = _normalize_all(from_semantic_scholar, [payload] if payload else [])
@@ -248,7 +255,7 @@ def _run_round(papers: list[PaperFetch], tried: dict[str, set[tuple[str, str]]],
     """One batched request per provider; returns whether any record was accepted."""
     progress = False
     for provider in PROVIDERS:
-        wanted: dict[str, set[str]] = {"openalex": set(), "semantic_scholar": set(), "doi": set(), "arxiv": set()}
+        wanted: dict[str, set[str]] = {k: set() for k in ("openalex", "semantic_scholar", "doi", "arxiv", "pmid", "pmcid")}
         asking: list[tuple[PaperFetch, list[tuple[str, str]]]] = []
         for paper in papers:
             if provider in paper.records or paper.status.get(provider) in ("rate_limited", "error"):

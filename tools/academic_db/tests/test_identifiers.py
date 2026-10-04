@@ -59,6 +59,11 @@ def test_arxiv_id_from_doi():
         ),
         ("CorpusId:13756489", Identifier("semantic_scholar", "CorpusId:13756489")),
         ("corpus_id: 13756489", Identifier("semantic_scholar", "CorpusId:13756489")),
+        ("PMID:26017442", Identifier("pmid", "26017442")),
+        ("https://pubmed.ncbi.nlm.nih.gov/26017442/", Identifier("pmid", "26017442")),
+        ("PMC7778961", Identifier("pmcid", "PMC7778961")),
+        ("pmcid:7778961", Identifier("pmcid", "PMC7778961")),
+        ("https://pmc.ncbi.nlm.nih.gov/articles/PMC7778961/", Identifier("pmcid", "PMC7778961")),
     ],
 )
 def test_parse_identifier(raw, expected):
@@ -68,3 +73,8 @@ def test_parse_identifier(raw, expected):
 def test_parse_identifier_rejects_garbage():
     with pytest.raises(ValueError, match="Unrecognized identifier"):
         parse_identifier("attention is all you need")
+
+
+def test_zbmath_ids_explain_the_doi_workaround():
+    with pytest.raises(ValueError, match="pass the paper's DOI"):
+        parse_identifier("zbMATH:07338913")
