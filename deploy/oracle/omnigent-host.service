@@ -7,6 +7,8 @@ Wants=network-online.target
 User=ubuntu
 WorkingDirectory=/opt/hack/demo/workspace
 EnvironmentFile=/etc/hack/host.env
+# Claude Code's native installer puts `claude` in ~/.local/bin.
+Environment=PATH=/home/ubuntu/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStart=/opt/hack/.venv/bin/omnigent host ${OMNIGENT_URL}
 Restart=always
 RestartSec=10
