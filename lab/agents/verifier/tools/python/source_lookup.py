@@ -24,3 +24,7 @@ europepmc_get_paper = _s.export(_europepmc.europepmc_get_paper, __name__)
 zbmath_get_paper = _s.export(_zbmath.zbmath_get_paper, __name__)
 unpaywall_find_full_text = _s.export(_unpaywall.unpaywall_find_full_text, __name__)
 loogle_search = _s.export(_loogle.loogle_search, __name__)
+
+_full_text = _s.load("full_text")
+check_quote = _s.export(_full_text.check_quote, __name__)
+read_full_text = _s.export(_full_text.read_full_text, __name__)
