@@ -1,0 +1,66 @@
+# Team Omnigent server on the Oracle VM. Start it with ./deploy.sh, which
+# pins OMNIGENT_IMAGE_TAG to the omnigent version locked in uv.lock.
+name: omnigent
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: omnigent
+      POSTGRES_USER: omnigent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omnigent -d omnigent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  omnigent:
+    image: ghcr.io/omnigent-ai/omnigent-server:${OMNIGENT_IMAGE_TAG:?run ./deploy.sh, it sets OMNIGENT_IMAGE_TAG from uv.lock}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://omnigent:${POSTGRES_PASSWORD}@postgres:5432/omnigent
+      ARTIFACT_DIR: /data/artifacts
+      HOST: 0.0.0.0
+      PORT: "8000"
+      OMNIGENT_ADMIN_CREDENTIALS_PATH: /data/admin-credentials
+      OMNIGENT_AUTH_ENABLED: "1"
+      OMNIGENT_DOMAIN: ${OMNIGENT_DOMAIN:?set OMNIGENT_DOMAIN in .env}
+      OMNIGENT_ACCOUNTS_BASE_URL: https://${OMNIGENT_DOMAIN}
+      OMNIGENT_ACCOUNTS_COOKIE_SECRET: ${OMNIGENT_ACCOUNTS_COOKIE_SECRET:?set OMNIGENT_ACCOUNTS_COOKIE_SECRET in .env}
+      OMNIGENT_ACCOUNTS_AUTO_OPEN: "0"
+      OMNIGENT_FEATURES: ${OMNIGENT_FEATURES:-}
+      OMNIGENT_BUILTIN_AGENT_DIRS: /agents/hack-team
+    volumes:
+      - artifact-data:/data
+      - ../../demo/team:/agents/hack-team:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - omnigent
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      OMNIGENT_DOMAIN: ${OMNIGENT_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  postgres-data:
+  artifact-data:
+  caddy-data:
+  caddy-config:

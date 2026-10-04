@@ -1,0 +1,4 @@
+{$OMNIGENT_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy omnigent:8000
+}

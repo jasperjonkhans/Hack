@@ -1,0 +1,15 @@
+[Unit]
+Description=Omnigent agent host for the team server
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/hack/demo/workspace
+EnvironmentFile=/etc/hack/host.env
+ExecStart=/opt/hack/.venv/bin/omnigent host ${OMNIGENT_URL}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
