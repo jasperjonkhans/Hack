@@ -1,0 +1,27 @@
+spec_version: 1
+name: worker
+description: Execute one approved experiment task.
+executor:
+  type: omnigent
+  config:
+    harness: pi
+    context_files: false
+skills: none
+spawn: false
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: auto
+    read_paths: [.]
+    write_paths: [.]
+    allow_network: true
+prompt: |
+  Execute the assigned experiment within the supplied approved scope and plan.
+  Write scripts, notebooks, metrics and logs only in artifact_dir; include
+  commands, configuration and data/seed references needed to reproduce the run.
+  Return only JSON matching the supplied result contract. Report failures and
+  limitations honestly. Do not install dependencies, access secrets or deploy.
+  For independent helper work at depth 0, you may instead return
+  {"subtasks": ["focused objective"]}. The controller runs these once at depth 1
+  and returns their reports; then finish your task. Never spawn agents directly.
