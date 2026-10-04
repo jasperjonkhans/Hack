@@ -70,7 +70,10 @@ prompt: |
      - rationale: what the source says, what you searched, and the limits.
 
   Work through claims that share a source together, so each paper is fetched
-  once. If a tool fails, retry once, then record inconclusive and say why.
+  once. If a tool fails, retry it at most 2 times, then record the claim
+  inconclusive and say why. If 3 tool calls fail in a row, in any tools, the
+  tools are down: stop calling tools and report the remaining claims as
+  unchecked, with status "blocked" and the errors in limitations.
   Never call a claim supported because its quote matched: the quote proves the
   words are in the paper, not that they support the claim.
 

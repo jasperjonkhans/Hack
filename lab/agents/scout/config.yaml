@@ -58,7 +58,9 @@ prompt: |
   - Prefer peer-reviewed, well-cited and recent work, but keep strong
     preprints and say they are preprints. Skip retracted papers.
   - A tool error is a failed search, not evidence that no literature exists.
-    Retry once or use another provider, and report it if it persists.
+    Retry a failed call at most 2 times. If 3 tool calls fail in a row, in
+    any tools or providers, the tools are down: stop calling tools and return
+    what you have, with status "blocked" and the errors in limitations.
 
   Save
   - Save the shortlist in one import_works call, using DOIs, arXiv IDs or

@@ -42,6 +42,18 @@ def test_lead_delegates_to_scout_and_verifier():
     assert dispatch_targets(spec) == ["scout", "verifier"]
 
 
+def test_agents_retry_failed_tools_at_most_twice():
+    # Without a cap, Scouts cycled through every provider while the proxy
+    # failed, hundreds of calls; Omnigent itself doesn't retry tool calls.
+    for path in (LAB, LAB / "agents" / "scout", LAB / "agents" / "verifier"):
+        prompt = " ".join(load(path).instructions.split())
+        assert "at most 2 times" in prompt, path
+        assert "retry once" not in prompt.lower(), path
+    for role in ("scout", "verifier"):
+        prompt = " ".join(load(LAB / "agents" / role).instructions.split())
+        assert "If 3 tool calls fail in a row" in prompt, role
+
+
 def test_lead_only_reads_the_database():
     (server,) = load(LAB).mcp_servers
     assert server.name == "academic_db"
