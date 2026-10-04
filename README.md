@@ -121,6 +121,15 @@ Every agent is pinned to one model through OpenRouter, and tests keep the agents
 
 Optional formal-proof support is available to the local experiment worker in `team/agents/worker/`. See [Lean proof verification](docs/lean-proof-tool.md) and [Lean skill and Omnigent integration](docs/lean-skill.md). Lean execution needs a trusted, pre-provisioned environment and external worker isolation; neither the skill nor the tool is a sandbox.
 
+## Team
+
+Built in Vienna by:
+
+- [@sercinci](https://github.com/sercinci)
+- [@SebastianSherrah](https://github.com/SebastianSherrah)
+- [@jasperjonkhans](https://github.com/jasperjonkhans)
+- [@SwitchmanPlay](https://github.com/SwitchmanPlay)
+
 ## Status and next steps
 
 Mimir is a hackathon prototype. Experiment results are reported to the user, who decides the next step; they are not yet written back to the shared database. Next: persist experiment outcomes alongside claims so later research rounds build on measured results, and add automated re-planning from those results with the user still in the loop.
