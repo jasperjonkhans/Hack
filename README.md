@@ -19,7 +19,18 @@ Configure provider: `uv run omnigent setup`
 
 Run the YAML-defined team: `cd demo/workspace && ../../.venv/bin/omnigent run ../team`
 
-Run tests from the repository root: `uv run python -m unittest discover -s demo -v`
+Run demo tests from the repository root: `uv run python -m unittest discover -s demo -v`
 
 After moving a virtual environment, restart stale Omnigent services from this
 root: `uv run omnigent stop`, then `uv run omnigent start --no-open`.
+
+## Lean tool and skill
+
+- [Lean proof verification](docs/lean-proof-tool.md): LeanInteract-backed tool with compiler diagnostics, deadlines, and strict transitive axiom checks.
+- [Lean skill and Omnigent integration](docs/lean-skill.md): proof development, statement review, and fail-closed verification, with a native agent bundle in `demo/lean/`.
+
+Install development dependencies: `uv sync --locked --extra dev` (Python 3.14+, matching the demo).
+
+Fast Lean/skill tests: `uv run --locked pytest -m 'not integration'`.
+
+The verifier lives in `omnigent_lean`, not `omnigent`: it coexists with the actual Omnigent runtime. The `omnigent-lean` CLI and `lean_verify_proof` tool name are unchanged. Lean execution requires a trusted, pre-provisioned environment and external worker isolation; neither the skill nor the tool is a sandbox.

@@ -1,16 +1,38 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
 [project]
 name = "hack"
 version = "0.1.0"
-description = "Add your description here"
+description = "Omnigent development demo, Lean 4 proof verification and the academic works database tools"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "academic-db-mcp",
     "omnigent>=0.16.0",
+    "lean-interact==0.11.5",
 ]
 
 [project.optional-dependencies]
 databricks = ["omnigent[databricks]>=0.16.0"]
+dev = ["pytest>=8,<10", "ruff>=0.12,<0.17"]
+
+[project.scripts]
+omnigent-lean = "omnigent_lean.tools.lean:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/omnigent_lean"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: requires a provisioned Lean toolchain and REPL"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
 
 [tool.uv.workspace]
 members = ["tools/academic_db"]
